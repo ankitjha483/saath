@@ -11,13 +11,16 @@ app.use(express.json());
 const server = http.createServer(app);
 const io = new Server(server);
 
-const db = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-});
+// Online ho to DATABASE_URL, laptop par ho to .env wali details
+const db = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL })
+  : new Pool({
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME
+    });
 
 // ---------- SECURITY GUARD ----------
 function authCheck(req, res, next) {
@@ -215,4 +218,5 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => console.log("Server started: http://localhost:3000"));    
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log("Server started on port " + PORT));

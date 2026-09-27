@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Saath</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hind:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --plum:#3B1F4A; --marigold:#F2A93B; --rose:#E4577A; --leaf:#2E9E7A;
+  --bg:#F6F0FA; --surface:#FFFFFF; --ink:#1E1426; --muted:#6E5F7A; --line:#E6DAEE; --chip:#F1E7F7;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hind",system-ui,sans-serif;font-size:16px;line-height:1.5;display:flex;justify-content:center;align-items:center}
+h1,h2,h3{font-family:"Bricolage Grotesque","Hind",sans-serif;margin:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--marigold);outline-offset:2px}
+
+.app{width:100%;max-width:420px;height:min(820px,100vh);background:var(--surface);border-radius:32px;border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:0 30px 60px -30px rgba(59,31,74,.45)}
+@media (max-width:480px){.app{border-radius:0;border:0;height:100dvh;max-width:none;box-shadow:none}}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px}
+.logo{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.6rem;color:var(--plum);letter-spacing:-.02em}
+.logo span{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--marigold);margin-left:3px}
+.hello{color:var(--muted);font-size:.95rem}
+
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.active{display:flex}
+
+/* auth */
+.auth{padding:12px 24px 24px;overflow-y:auto}
+.auth h1{font-size:2.6rem;font-weight:800;line-height:1;color:var(--plum);letter-spacing:-.03em;margin:12px 0 6px}
+.auth .sub{color:var(--muted);margin:0 0 20px}
+.seg{display:flex;background:var(--chip);border-radius:999px;padding:4px;margin-bottom:18px}
+.seg button{flex:1;border:0;background:none;border-radius:999px;padding:8px 0}
+.seg button[aria-pressed="true"]{background:var(--surface);font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.field{margin-bottom:12px}
+.field label{display:block;font-weight:600;font-size:.95rem;margin-bottom:4px}
+.field input,.field select{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg)}
+.row{display:flex;gap:10px}.row .field{flex:1}
+.primary{background:var(--plum);color:#fff;border:0;border-radius:999px;padding:12px 22px;font-weight:600;width:100%}
+.primary:disabled{opacity:.6}
+.error{color:var(--rose);font-weight:500;min-height:1.5em;margin:4px 0 8px}
+
+/* deck */
+.deck{flex:1;position:relative;margin:8px 16px 0}
+.card{position:absolute;inset:0;border-radius:24px;overflow:hidden;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;touch-action:none;user-select:none;transition:transform .3s ease}
+.card.dragging{transition:none}
+.card .art{flex:1;min-height:0;position:relative}
+.card .art svg{width:100%;height:100%;display:block}
+.stamp{position:absolute;top:24px;padding:4px 14px;border-radius:10px;font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.6rem;opacity:0;border:3px solid;background:rgba(255,255,255,.8)}
+.stamp.like{left:20px;color:var(--leaf);border-color:var(--leaf);transform:rotate(-12deg)}
+.stamp.nope{right:20px;color:var(--rose);border-color:var(--rose);transform:rotate(12deg)}
+.info{padding:14px 18px 16px}
+.name{font-size:1.6rem;font-weight:700;line-height:1.1}
+.name small{font-weight:500;font-size:1.25rem;color:var(--muted);margin-left:6px}
+.meta{color:var(--muted);font-size:.95rem;margin-top:2px}
+.prompt{margin-top:10px;background:var(--chip);border-radius:14px;padding:10px 12px}
+.prompt b{display:block;font-size:.85rem;color:var(--muted);font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.85rem}
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:10px}
+.empty p{color:var(--muted);margin:0;max-width:30ch}
+.actions{display:flex;justify-content:center;gap:24px;padding:14px 0 10px}
+.act{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 16px -6px rgba(59,31,74,.35)}
+.act svg{width:26px;height:26px}
+.act.pass{color:var(--rose)}.act.like{color:var(--leaf)}
+.act:active{transform:scale(.94)}
+
+/* lists */
+.scroll{flex:1;overflow-y:auto;padding:8px 20px 20px}
+.section-title{font-size:1.3rem;font-weight:700;margin:4px 0 12px}
+.matchrow{display:flex;gap:12px;align-items:center;padding:10px;border-radius:16px;background:none;border:0;width:100%;text-align:left}
+.matchrow:hover{background:var(--chip)}
+.mini{width:56px;height:56px;border-radius:50%;overflow:hidden;flex:none}
+.mini svg{width:100%;height:100%;display:block}
+.muted{color:var(--muted)}
+.note{background:var(--chip);border-radius:16px;padding:14px 16px;font-size:.95rem;margin:16px 0}
+.ghostbtn{background:none;border:1px solid var(--line);border-radius:999px;padding:10px 20px;width:100%}
+
+/* tabs */
+.tabs{display:flex;border-top:1px solid var(--line);padding:6px 8px}
+.tab{flex:1;background:none;border:0;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.8rem;color:var(--muted)}
+.tab svg{width:22px;height:22px}
+.tab.active{color:var(--plum);font-weight:600}
+
+/* overlay + toast */
+.overlay{position:absolute;inset:0;background:#3B1F4A;color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:32px;text-align:center;z-index:5}
+.overlay.show{display:flex}
+.overlay h2{font-size:3rem;font-weight:800;color:var(--marigold);line-height:1}
+.overlay .mini{width:110px;height:110px;border:4px solid #3B1F4A}
+.overlay .primary{background:var(--marigold);color:#1E1426;width:auto}
+.toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 16px;border-radius:999px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:6}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="topbar">
+    <div class="logo">saath<span></span></div>
+    <div class="hello" id="hello"></div>
+  </header>
+
+  <!-- LOGIN / SIGN UP -->
+  <section class="screen" id="screen-auth">
+    <div class="auth">
+      <h1>Milo, baat karo.</h1>
+      <p class="sub">Saath par conversation pehle aati hai, photo baad mein.</p>
+      <div class="seg" role="group">
+        <button id="tabLogin" aria-pressed="true">Login</button>
+        <button id="tabSignup" aria-pressed="false">Sign up</button>
+      </div>
+
+      <form id="loginForm">
+        <div class="field"><label for="lEmail">Email</label><input id="lEmail" type="email" required autocomplete="email"></div>
+        <div class="field"><label for="lPass">Password</label><input id="lPass" type="password" required autocomplete="current-password"></div>
+        <p class="error" id="loginErr"></p>
+        <button class="primary" type="submit">Login</button>
+      </form>
+
+      <form id="signupForm" hidden>
+        <div class="field"><label for="sName">Naam</label><input id="sName" required></div>
+        <div class="field"><label for="sEmail">Email</label><input id="sEmail" type="email" required autocomplete="email"></div>
+        <div class="field"><label for="sPass">Password (kam se kam 8 characters)</label><input id="sPass" type="password" required minlength="8" autocomplete="new-password"></div>
+        <div class="row">
+          <div class="field"><label for="sAge">Umar</label><input id="sAge" type="number" min="18" max="99" required></div>
+          <div class="field"><label for="sGender">Main hoon</label>
+            <select id="sGender"><option value="woman">Woman</option><option value="man">Man</option><option value="other">Other</option></select></div>
+        </div>
+        <div class="field"><label for="sCity">City</label><input id="sCity" placeholder="Jaise Gurugram"></div>
+        <p class="error" id="signupErr"></p>
+        <button class="primary" type="submit">Account banao</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- DISCOVER -->
+  <section class="screen" id="screen-discover">
+    <div class="deck" id="deck"></div>
+    <div class="actions">
+      <button class="act pass" id="passBtn" aria-label="Pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <button class="act like" id="likeBtn" aria-label="Like"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.7 4.5c2.1 0 3.7 1.2 5.3 3 1.6-1.8 3.2-3 5.3-3 3.7 0 5.8 3.8 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg></button>
+    </div>
+  </section>
+
+  <!-- MATCHES -->
+  <section class="screen" id="screen-matches">
+    <div class="scroll">
+      <h2 class="section-title">Aapke matches</h2>
+      <div id="matchList"></div>
+    </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section class="screen" id="screen-profile">
+    <div class="scroll">
+      <h2 class="section-title">Aapki profile</h2>
+      <p id="profileInfo"></p>
+      <div class="note">Chat, block aur report agle steps mein aayenge.</div>
+      <button class="ghostbtn" id="logoutBtn">Logout</button>
+    </div>
+  </section>
+
+  <nav class="tabs" id="tabs" hidden>
+    <button class="tab active" data-screen="discover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="3"/></svg>Discover</button>
+    <button class="tab" data-screen="matches"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>Matches</button>
+    <button class="tab" data-screen="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Profile</button>
+  </nav>
+
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+    <h2>It's a match</h2>
+    <div class="mini" id="ovAvatar"></div>
+    <p id="ovText" style="margin:0;max-width:28ch"></p>
+    <button class="primary" id="ovClose">Keep swiping</button>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+</main>
+
+<script>
+// ================== BACKEND SE BAAT ==================
+let token = null;
+try { token = localStorage.getItem("saath_token"); } catch (e) {}
+
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: "Bearer " + token } : {})
+    }
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && token) { logout(); throw new Error("Session khatam, dobara login karo"); }
+  if (!res.ok) throw new Error(data.error || "Kuch gadbad ho gayi");
+  return data;
+}
+
+// Token ke beech wale hisse se naam aur id padhna
+function me() {
+  try {
+    const part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(part));
+  } catch (e) { return {}; }
+}
+
+// ================== HELPERS ==================
+const $ = s => document.querySelector(s);
+const COLORS = [["#F2A93B","#E4577A"],["#2E9E7A","#3B1F4A"],["#E4577A","#7B4BA0"],["#3B7DD8","#2E9E7A"],["#F2A93B","#2E9E7A"],["#7B4BA0","#3B7DD8"]];
+function esc(t) { return String(t ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+
+function avatar(p) {
+  const [a, b] = COLORS[p.id % COLORS.length];
+  const gid = "g" + p.id + Math.random().toString(36).slice(2, 6);
+  return `<svg viewBox="0 0 300 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>
+    <rect width="300" height="300" fill="url(#${gid})"/>
+    <circle cx="240" cy="60" r="70" fill="#fff" opacity=".12"/>
+    <circle cx="150" cy="125" r="52" fill="#fff" opacity=".9"/>
+    <path d="M60 300c4-60 44-96 90-96s86 36 90 96z" fill="#fff" opacity=".9"/>
+    <text x="150" y="143" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="52" fill="${b}">${esc((p.name || "?")[0])}</text>
+  </svg>`;
+}
+
+let tt;
+function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2000); }
+
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === "screen-" + name));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.screen === name));
+  if (name === "matches") loadMatches();
+}
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => showScreen(t.dataset.screen));
+
+// ================== LOGIN / SIGN UP ==================
+function setAuthTab(isLogin) {
+  $("#tabLogin").setAttribute("aria-pressed", isLogin);
+  $("#tabSignup").setAttribute("aria-pressed", !isLogin);
+  $("#loginForm").hidden = !isLogin;
+  $("#signupForm").hidden = isLogin;
+}
+$("#tabLogin").onclick = () => setAuthTab(true);
+$("#tabSignup").onclick = () => setAuthTab(false);
+
+$("#loginForm").onsubmit = async e => {
+  e.preventDefault();
+  $("#loginErr").textContent = "";
+  try {
+    const data = await api("/api/login", { method: "POST", body: JSON.stringify({ email: $("#lEmail").value, password: $("#lPass").value }) });
+    loginDone(data.token);
+  } catch (err) { $("#loginErr").textContent = err.message; }
+};
+
+$("#signupForm").onsubmit = async e => {
+  e.preventDefault();
+  $("#signupErr").textContent = "";
+  const body = {
+    name: $("#sName").value.trim(), email: $("#sEmail").value.trim(), password: $("#sPass").value,
+    age: Number($("#sAge").value), gender: $("#sGender").value, city: $("#sCity").value.trim()
+  };
+  try {
+    await api("/api/signup", { method: "POST", body: JSON.stringify(body) });
+    const data = await api("/api/login", { method: "POST", body: JSON.stringify({ email: body.email, password: body.password }) });
+    loginDone(data.token);
+    toast("Account ban gaya, welcome!");
+  } catch (err) { $("#signupErr").textContent = err.message; }
+};
+
+function loginDone(t) {
+  token = t;
+  try { localStorage.setItem("saath_token", t); } catch (e) {}
+  startApp();
+}
+
+function logout() {
+  token = null;
+  try { localStorage.removeItem("saath_token"); } catch (e) {}
+  $("#tabs").hidden = true;
+  $("#hello").textContent = "";
+  showScreen("auth");
+}
+$("#logoutBtn").onclick = logout;
+
+// ================== DISCOVER (SWIPE) ==================
+let profiles = [];
+
+async function loadProfiles() {
+  $("#deck").innerHTML = `<div class="empty"><p>Profiles aa rahi hain...</p></div>`;
+  try {
+    profiles = (await api("/api/profiles")).reverse();
+    renderDeck();
+  } catch (err) {
+    $("#deck").innerHTML = `<div class="empty"><h3>Server se baat nahi ho paayi</h3><p>${esc(err.message)}. Check karo ki terminal mein server chal raha hai.</p></div>`;
+  }
+}
+
+function cardHTML(p) {
+  const chips = [p.intent, p.languages ? "Speaks " + p.languages : null].filter(Boolean).map(c => `<span class="chip">${esc(c)}</span>`).join("");
+  const prompt = p.prompt_question ? `<div class="prompt"><b>${esc(p.prompt_question)}</b>${esc(p.prompt_answer)}</div>` : "";
+  const meta = [p.job, p.city].filter(Boolean).map(esc).join(", ");
+  return `<div class="art">${avatar(p)}<div class="stamp like">LIKE</div><div class="stamp nope">PASS</div></div>
+    <div class="info">
+      <div class="name">${esc(p.name)}<small>${esc(p.age)}</small></div>
+      ${meta ? `<div class="meta">${meta}</div>` : ""}
+      ${prompt}
+      ${chips ? `<div class="chips">${chips}</div>` : ""}
+    </div>`;
+}
+
+function renderDeck() {
+  const deck = $("#deck");
+  deck.innerHTML = "";
+  if (!profiles.length) {
+    deck.innerHTML = `<div class="empty"><h3>Aapne sabko dekh liya</h3><p>Naye log judenge to yahan dikhenge.</p></div>`;
+    return;
+  }
+  profiles.slice(-3).forEach((p, i, arr) => {
+    const el = document.createElement("article");
+    el.className = "card";
+    el.innerHTML = cardHTML(p);
+    el.dataset.id = p.id;
+    const depth = arr.length - 1 - i;
+    el.style.transform = `translateY(${depth * 8}px) scale(${1 - depth * 0.04})`;
+    el.style.zIndex = 10 - depth;
+    if (depth === 0) attachDrag(el);
+    deck.appendChild(el);
+  });
+}
+
+function attachDrag(el) {
+  let sx = 0, dx = 0, down = false;
+  const like = el.querySelector(".stamp.like"), nope = el.querySelector(".stamp.nope");
+  el.addEventListener("pointerdown", e => { down = true; sx = e.clientX; el.setPointerCapture(e.pointerId); el.classList.add("dragging"); });
+  el.addEventListener("pointermove", e => {
+    if (!down) return;
+    dx = e.clientX - sx;
+    el.style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`;
+    like.style.opacity = Math.max(0, Math.min(1, dx / 100));
+    nope.style.opacity = Math.max(0, Math.min(1, -dx / 100));
+  });
+  const end = () => {
+    if (!down) return;
+    down = false; el.classList.remove("dragging");
+    if (dx > 110) swipe("like");
+    else if (dx < -110) swipe("pass");
+    else { el.style.transform = ""; like.style.opacity = 0; nope.style.opacity = 0; }
+    dx = 0;
+  };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
+}
+
+async function swipe(action) {
+  if (!profiles.length) return;
+  const p = profiles.pop();
+  const top = document.querySelector(`.card[data-id="${p.id}"]`);
+  if (top) {
+    top.querySelector(action === "like" ? ".stamp.like" : ".stamp.nope").style.opacity = 1;
+    top.style.transition = "transform .35s ease";
+    top.style.transform = `translateX(${action === "like" ? 600 : -600}px) rotate(${action === "like" ? 30 : -30}deg)`;
+  }
+  setTimeout(renderDeck, 280);
+  try {
+    const data = await api("/api/swipe", { method: "POST", body: JSON.stringify({ to_user: p.id, action }) });
+    if (data.match) showMatch(p);
+  } catch (err) {
+    toast(err.message);
+    profiles.push(p); renderDeck();
+  }
+}
+$("#likeBtn").onclick = () => swipe("like");
+$("#passBtn").onclick = () => swipe("pass");
+
+function showMatch(p) {
+  $("#ovAvatar").innerHTML = avatar(p);
+  $("#ovText").textContent = `Aap aur ${p.name} ek-doosre ko pasand karte ho.`;
+  $("#overlay").classList.add("show");
+}
+$("#ovClose").onclick = () => $("#overlay").classList.remove("show");
+
+// ================== MATCHES ==================
+async function loadMatches() {
+  const list = $("#matchList");
+  list.innerHTML = `<p class="muted">Load ho raha hai...</p>`;
+  try {
+    const matches = await api("/api/matches");
+    if (!matches.length) { list.innerHTML = `<p class="muted">Abhi koi match nahi. Discover mein kuch logon ko like karo.</p>`; return; }
+    list.innerHTML = matches.map(m => `<button class="matchrow" data-name="${esc(m.name)}"><div class="mini">${avatar(m)}</div><div><b>${esc(m.name)}, ${esc(m.age)}</b><div class="muted">${esc(m.city || "")}</div></div></button>`).join("");
+    list.querySelectorAll(".matchrow").forEach(r => r.onclick = () => toast("Chat Step 6 mein aayegi"));
+  } catch (err) { list.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+}
+
+// ================== START ==================
+function startApp() {
+  const user = me();
+  $("#hello").textContent = user.name ? "Hi, " + user.name : "";
+  $("#profileInfo").textContent = user.name ? `Aap ${user.name} ke naam se logged in ho (user id ${user.id}).` : "";
+  $("#tabs").hidden = false;
+  showScreen("discover");
+  loadProfiles();
+}
+
+if (token) startApp(); else showScreen("auth");
+</script>
+</body>
+</html>

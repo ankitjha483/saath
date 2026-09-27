@@ -27,9 +27,7 @@ function authCheck(req, res, next) {
   }
 }
 
-app.get("/", (req, res) => {
-  res.send("Saath backend chal raha hai!");
-});
+app.use(express.static("public"));
 
 // ---------- SIGN UP ----------
 app.post("/api/signup", async (req, res) => {

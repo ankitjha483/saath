@@ -1,3 +1,4 @@
+// saath-v5-demo
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -39,11 +40,31 @@ async function isMatch(userA, userB) {
   const result = await db.query(
     `SELECT 1 FROM swipes a
      JOIN swipes b ON a.from_user = b.to_user AND a.to_user = b.from_user
-     WHERE a.from_user = $1 AND a.to_user = $2 AND a.action = 'like' AND b.action = 'like'`,
+     WHERE a.from_user = $1 AND a.to_user = $2 AND a.action = 'like' AND b.action = 'like'
+       AND NOT EXISTS (
+         SELECT 1 FROM blocks
+         WHERE (blocker = $1 AND blocked = $2) OR (blocker = $2 AND blocked = $1)
+       )`,
     [userA, userB]
   );
   return result.rowCount > 0;
 }
+
+// ---------- DEMO PROFILES (portfolio ke liye) ----------
+// @demo.com wale profiles asli log nahi hain. Ye wapas like karte hain aur chat mein auto-reply dete hain,
+// taaki link kholne wala har insaan match aur chat try kar sake.
+async function isDemoUser(userId) {
+  const r = await db.query("SELECT 1 FROM users WHERE id = $1 AND email LIKE '%@demo.com'", [userId]);
+  return r.rowCount > 0;
+}
+
+const DEMO_REPLIES = [
+  "Hi! Kaise ho? 😊",
+  "Haha, achha laga tumse match hokar!",
+  "Waise weekend pe kya karna pasand hai?",
+  "Chai ya coffee? Soch samajh ke jawab dena 😄",
+  "Ek baat batao jo profile mein nahi likhi!"
+];
 
 app.use(express.static("public"));
 
@@ -107,6 +128,8 @@ app.get("/api/profiles", authCheck, async (req, res) => {
        FROM users
        WHERE id <> $1
          AND id NOT IN (SELECT to_user FROM swipes WHERE from_user = $1)
+         AND id NOT IN (SELECT blocked FROM blocks WHERE blocker = $1)
+         AND id NOT IN (SELECT blocker FROM blocks WHERE blocked = $1)
        ORDER BY id`,
       [req.user.id]
     );
@@ -132,6 +155,13 @@ app.post("/api/swipe", authCheck, async (req, res) => {
        ON CONFLICT (from_user, to_user) DO UPDATE SET action = EXCLUDED.action`,
       [req.user.id, to_user, action]
     );
+    if (action === "like" && (await isDemoUser(to_user))) {
+      await db.query(
+        `INSERT INTO swipes (from_user, to_user, action) VALUES ($1, $2, 'like')
+         ON CONFLICT (from_user, to_user) DO NOTHING`,
+        [to_user, req.user.id]
+      );
+    }
     const match = action === "like" && (await isMatch(req.user.id, to_user));
     res.json({ message: match ? "It's a match! 🎉" : "Swipe save ho gaya", match });
   } catch (err) {
@@ -151,11 +181,69 @@ app.get("/api/matches", authCheck, async (req, res) => {
        FROM swipes a
        JOIN swipes b ON a.from_user = b.to_user AND a.to_user = b.from_user
        JOIN users u ON u.id = a.to_user
-       WHERE a.from_user = $1 AND a.action = 'like' AND b.action = 'like'`,
+       WHERE a.from_user = $1 AND a.action = 'like' AND b.action = 'like'
+         AND NOT EXISTS (
+           SELECT 1 FROM blocks
+           WHERE (blocker = $1 AND blocked = u.id) OR (blocker = u.id AND blocked = $1)
+         )`,
       [req.user.id]
     );
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Kuch gadbad ho gayi, dobara try karo" });
+  }
+});
+
+// ---------- BLOCK ----------
+app.post("/api/block", authCheck, async (req, res) => {
+  const userId = Number(req.body.user_id);
+  if (!userId || userId === req.user.id) {
+    return res.status(400).json({ error: "Galat user" });
+  }
+  try {
+    await db.query(
+      "INSERT INTO blocks (blocker, blocked) VALUES ($1, $2) ON CONFLICT (blocker, blocked) DO NOTHING",
+      [req.user.id, userId]
+    );
+    io.to("user:" + userId).emit("match_removed", { user_id: req.user.id });
+    res.json({ message: "Block kar diya. Ab ye aapko nahi dikhenge." });
+  } catch (err) {
+    if (err.code === "23503") {
+      return res.status(404).json({ error: "Ye user exist nahi karta" });
+    }
+    console.error(err);
+    res.status(500).json({ error: "Kuch gadbad ho gayi, dobara try karo" });
+  }
+});
+
+// ---------- REPORT (report ke saath block bhi) ----------
+const REPORT_REASONS = ["Badtameezi", "Fake profile", "Spam ya scam", "Kuch aur"];
+
+app.post("/api/report", authCheck, async (req, res) => {
+  const userId = Number(req.body.user_id);
+  const { reason } = req.body;
+  if (!userId || userId === req.user.id) {
+    return res.status(400).json({ error: "Galat user" });
+  }
+  if (!REPORT_REASONS.includes(reason)) {
+    return res.status(400).json({ error: "Report ki wajah chuno" });
+  }
+  try {
+    await db.query(
+      "INSERT INTO reports (reporter, reported, reason) VALUES ($1, $2, $3)",
+      [req.user.id, userId, reason]
+    );
+    await db.query(
+      "INSERT INTO blocks (blocker, blocked) VALUES ($1, $2) ON CONFLICT (blocker, blocked) DO NOTHING",
+      [req.user.id, userId]
+    );
+    io.to("user:" + userId).emit("match_removed", { user_id: req.user.id });
+    res.json({ message: "Report mil gayi. Humne is user ko aapke liye block bhi kar diya." });
+  } catch (err) {
+    if (err.code === "23503") {
+      return res.status(404).json({ error: "Ye user exist nahi karta" });
+    }
     console.error(err);
     res.status(500).json({ error: "Kuch gadbad ho gayi, dobara try karo" });
   }
@@ -211,6 +299,23 @@ io.on("connection", (socket) => {
       const msg = result.rows[0];
       io.to("user:" + to_user).emit("new_message", msg);
       reply({ ok: true, message: msg });
+
+      // Demo profile ho to 1.5 second baad auto-reply
+      if (await isDemoUser(to_user)) {
+        const sender = socket.user.id;
+        setTimeout(async () => {
+          try {
+            const text = DEMO_REPLIES[Math.floor(Math.random() * DEMO_REPLIES.length)];
+            const r = await db.query(
+              "INSERT INTO messages (from_user, to_user, text) VALUES ($1, $2, $3) RETURNING id, from_user, to_user, text, created_at",
+              [to_user, sender, text]
+            );
+            io.to("user:" + sender).emit("new_message", r.rows[0]);
+          } catch (e) {
+            console.error(e);
+          }
+        }, 1500);
+      }
     } catch (err) {
       console.error(err);
       reply({ error: "Message nahi gaya, dobara try karo" });

@@ -1,4 +1,4 @@
-// saath-v5-demo
+// saath-v7-otp
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -6,6 +6,7 @@ const { Server } = require("socket.io");
 const { Pool } = require("pg");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const app = express();
 app.use(express.json());
@@ -68,11 +69,84 @@ const DEMO_REPLIES = [
 
 app.use(express.static("public"));
 
-// ---------- SIGN UP ----------
+// ---------- EMAIL BHEJNA (Brevo) ----------
+async function sendOtpEmail(to, code) {
+  // Laptop par Brevo key na ho to code terminal mein dikha do (sirf testing ke liye)
+  if (!process.env.BREVO_API_KEY) {
+    console.log(`OTP for ${to}: ${code}`);
+    return;
+  }
+  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "api-key": process.env.BREVO_API_KEY,
+      "Content-Type": "application/json",
+      accept: "application/json"
+    },
+    body: JSON.stringify({
+      sender: { name: "Saath", email: process.env.EMAIL_FROM },
+      to: [{ email: to }],
+      subject: `Saath verification code: ${code}`,
+      htmlContent: `<div style="font-family:Arial,sans-serif;max-width:420px;margin:auto;padding:24px;border:1px solid #D5EBE6;border-radius:16px">
+        <h2 style="color:#0F5E57;margin:0 0 8px">Saath</h2>
+        <p style="color:#0B2B28">Aapka verification code:</p>
+        <p style="font-size:32px;letter-spacing:8px;font-weight:bold;color:#0F5E57;margin:8px 0">${code}</p>
+        <p style="color:#4E6E6A;font-size:14px">Ye code 10 minute mein expire ho jayega. Ise kisi ke saath share mat karna.</p>
+        <p style="color:#4E6E6A;font-size:13px">Agar aapne Saath par sign up nahi kiya, to is email ko ignore karo.</p>
+      </div>`
+    })
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error("Brevo error: " + detail);
+  }
+}
+
+// ---------- OTP BHEJO ----------
+app.post("/api/send-otp", async (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: "Sahi email daalo" });
+  }
+  try {
+    const exists = await db.query("SELECT 1 FROM users WHERE email = $1", [email]);
+    if (exists.rowCount > 0) {
+      return res.status(409).json({ error: "Is email se account pehle se bana hua hai. Login karo." });
+    }
+    const recent = await db.query(
+      "SELECT 1 FROM email_otps WHERE email = $1 AND created_at > NOW() - INTERVAL '60 seconds'",
+      [email]
+    );
+    if (recent.rowCount > 0) {
+      return res.status(429).json({ error: "Code abhi bheja hai. 1 minute baad dobara try karo." });
+    }
+
+    const code = String(crypto.randomInt(100000, 1000000));
+    const codeHash = await bcrypt.hash(code, 10);
+    await db.query(
+      `INSERT INTO email_otps (email, code_hash, expires_at, attempts, created_at)
+       VALUES ($1, $2, NOW() + INTERVAL '10 minutes', 0, NOW())
+       ON CONFLICT (email) DO UPDATE
+       SET code_hash = EXCLUDED.code_hash, expires_at = EXCLUDED.expires_at, attempts = 0, created_at = NOW()`,
+      [email, codeHash]
+    );
+    await sendOtpEmail(email, code);
+    res.json({ message: "Code bhej diya. Email check karo (Spam folder bhi)." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Code nahi bhej paaye, thodi der baad try karo" });
+  }
+});
+
+// ---------- SIGN UP (OTP ke saath) ----------
 app.post("/api/signup", async (req, res) => {
-  const { name, email, password, age, gender, city } = req.body;
+  const { name, password, age, gender, city, otp } = req.body;
+  const email = String(req.body.email || "").trim().toLowerCase();
   if (!name || !email || !password || !age) {
     return res.status(400).json({ error: "Naam, email, password aur umar zaroori hai" });
+  }
+  if (!otp) {
+    return res.status(400).json({ error: "Email par aaya code daalo" });
   }
   if (password.length < 8) {
     return res.status(400).json({ error: "Password kam se kam 8 characters ka hona chahiye" });
@@ -81,11 +155,27 @@ app.post("/api/signup", async (req, res) => {
     return res.status(400).json({ error: "Saath sirf 18+ logon ke liye hai" });
   }
   try {
+    // OTP check
+    const o = await db.query("SELECT code_hash, expires_at, attempts FROM email_otps WHERE email = $1", [email]);
+    const row = o.rows[0];
+    if (!row || new Date(row.expires_at) < new Date()) {
+      return res.status(400).json({ error: "Code expire ho gaya. Naya code mangao." });
+    }
+    if (row.attempts >= 5) {
+      return res.status(429).json({ error: "Bahut baar galat code daala. Naya code mangao." });
+    }
+    const codeSahi = await bcrypt.compare(String(otp).trim(), row.code_hash);
+    if (!codeSahi) {
+      await db.query("UPDATE email_otps SET attempts = attempts + 1 WHERE email = $1", [email]);
+      return res.status(400).json({ error: "Code galat hai, dobara check karo" });
+    }
+
     const hash = await bcrypt.hash(password, 10);
     const result = await db.query(
       "INSERT INTO users (name, email, password_hash, age, gender, city) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email",
-      [name, email.toLowerCase(), hash, age, gender, city]
+      [name, email, hash, age, gender, city]
     );
+    await db.query("DELETE FROM email_otps WHERE email = $1", [email]);
     res.status(201).json({ message: "Account ban gaya!", user: result.rows[0] });
   } catch (err) {
     if (err.code === "23505") {

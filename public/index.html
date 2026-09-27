@@ -4,14 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saath</title>
-<!-- saath-v2-chat -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp -->
+<meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hind:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --plum:#3B1F4A; --marigold:#F2A93B; --rose:#E4577A; --leaf:#2E9E7A;
-  --bg:#F6F0FA; --surface:#FFFFFF; --ink:#1E1426; --muted:#6E5F7A; --line:#E6DAEE; --chip:#F1E7F7;
+  --plum:#0F5E57; --marigold:#F4845F; --rose:#D9534F; --leaf:#14A38F;
+  --bg:#ECF7F4; --surface:#FFFFFF; --ink:#0B2B28; --muted:#4E6E6A; --line:#D5EBE6; --chip:#E1F2EE;
 }
 *,*::before,*::after{box-sizing:border-box}
 html,body{height:100%}
@@ -21,7 +22,7 @@ button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid var(--marigold);outline-offset:2px}
 
-.app{width:100%;max-width:420px;height:min(820px,100vh);background:var(--surface);border-radius:32px;border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:0 30px 60px -30px rgba(59,31,74,.45)}
+.app{width:100%;max-width:420px;height:min(820px,100vh);background:var(--surface);border-radius:32px;border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:0 30px 60px -30px rgba(15,94,87,.35)}
 @media (max-width:480px){.app{border-radius:0;border:0;height:100dvh;max-width:none;box-shadow:none}}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px}
 .logo{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:1.6rem;color:var(--plum);letter-spacing:-.02em}
@@ -45,6 +46,11 @@ button{cursor:pointer}
 .primary{background:var(--plum);color:#fff;border:0;border-radius:999px;padding:12px 22px;font-weight:600;width:100%}
 .primary:disabled{opacity:.6}
 .error{color:var(--rose);font-weight:500;min-height:1.5em;margin:4px 0 8px}
+.okmsg{color:var(--plum);font-weight:500;margin:4px 0 8px}
+.otpbox{background:var(--chip);border-radius:16px;padding:14px;margin:8px 0 12px}
+.otpbox input{letter-spacing:.5em;font-size:1.3rem;text-align:center;font-weight:600}
+.linkbtn{background:none;border:0;color:var(--plum);font-weight:600;padding:6px 0;text-decoration:underline}
+.linkbtn:disabled{color:var(--muted);text-decoration:none}
 
 /* deck */
 .deck{flex:1;position:relative;margin:8px 16px 0}
@@ -66,7 +72,7 @@ button{cursor:pointer}
 .empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:10px}
 .empty p{color:var(--muted);margin:0;max-width:30ch}
 .actions{display:flex;justify-content:center;gap:24px;padding:14px 0 10px}
-.act{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 16px -6px rgba(59,31,74,.35)}
+.act{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 16px -6px rgba(15,94,87,.3)}
 .act svg{width:26px;height:26px}
 .act.pass{color:var(--rose)}.act.like{color:var(--leaf)}
 .act:active{transform:scale(.94)}
@@ -105,12 +111,24 @@ button{cursor:pointer}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:6px;vertical-align:middle}
 .dot.on{background:var(--leaf)}
 
+/* safety sheet */
+.menubtn{margin-left:auto;background:var(--chip);border:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center}
+.menubtn svg{width:20px;height:20px}
+.sheet-bg{position:absolute;inset:0;background:rgba(30,20,38,.45);display:none;z-index:7;align-items:flex-end}
+.sheet-bg.show{display:flex}
+.sheet{background:var(--surface);width:100%;border-radius:24px 24px 0 0;padding:20px 20px 24px}
+.sheet h3{font-size:1.2rem;margin-bottom:4px}
+.sheet p{color:var(--muted);margin:0 0 14px;font-size:.95rem}
+.sheet .opt{display:block;width:100%;text-align:left;background:none;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.sheet .opt.danger{color:var(--rose);font-weight:600}
+.sheet .cancel{background:none;border:0;width:100%;padding:10px;color:var(--muted)}
+
 /* overlay + toast */
-.overlay{position:absolute;inset:0;background:#3B1F4A;color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:32px;text-align:center;z-index:5}
+.overlay{position:absolute;inset:0;background:#0F5E57;color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:32px;text-align:center;z-index:5}
 .overlay.show{display:flex}
-.overlay h2{font-size:3rem;font-weight:800;color:var(--marigold);line-height:1}
-.overlay .mini{width:110px;height:110px;border:4px solid #3B1F4A}
-.overlay .primary{background:var(--marigold);color:#1E1426;width:auto}
+.overlay h2{font-size:3rem;font-weight:800;color:#FFD3C2;line-height:1}
+.overlay .mini{width:110px;height:110px;border:4px solid #0F5E57}
+.overlay .primary{background:var(--marigold);color:#0B2B28;width:auto}
 .toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 16px;border-radius:999px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:6}
 .toast.show{opacity:1}
 </style>
@@ -149,8 +167,13 @@ button{cursor:pointer}
             <select id="sGender"><option value="woman">Woman</option><option value="man">Man</option><option value="other">Other</option></select></div>
         </div>
         <div class="field"><label for="sCity">City</label><input id="sCity" placeholder="Jaise Gurugram"></div>
+        <div class="otpbox" id="otpBox" hidden>
+          <p class="okmsg" id="otpMsg"></p>
+          <div class="field"><label for="sOtp">Email par aaya 6 digit code</label><input id="sOtp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div>
+          <button type="button" class="linkbtn" id="resendBtn">Code dobara bhejo</button>
+        </div>
         <p class="error" id="signupErr"></p>
-        <button class="primary" type="submit">Account banao</button>
+        <button class="primary" type="submit" id="signupBtn">Email par code bhejo</button>
       </form>
     </div>
   </section>
@@ -178,6 +201,7 @@ button{cursor:pointer}
       <button class="backbtn" id="backBtn" aria-label="Matches par wapas jao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"/></svg></button>
       <div class="mini" id="chatAvatar"></div>
       <div><b id="chatName"></b><div class="muted" style="font-size:.85rem" id="chatStatus"></div></div>
+      <button class="menubtn" id="safetyBtn" aria-label="Block ya report karo"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
     </div>
     <div class="msgs" id="msgs" aria-live="polite"></div>
     <form class="composer" id="composer">
@@ -191,7 +215,7 @@ button{cursor:pointer}
     <div class="scroll">
       <h2 class="section-title">Aapki profile</h2>
       <p id="profileInfo"></p>
-      <div class="note">Block aur report agle step mein aayenge.</div>
+      <div class="note">Kisi se pareshani ho to chat mein upar ⋮ button se unhe block ya report kar sakte ho.</div>
       <button class="ghostbtn" id="logoutBtn">Logout</button>
     </div>
   </section>
@@ -207,6 +231,9 @@ button{cursor:pointer}
     <div class="mini" id="ovAvatar"></div>
     <p id="ovText" style="margin:0;max-width:28ch"></p>
     <button class="primary" id="ovClose">Keep swiping</button>
+  </div>
+  <div class="sheet-bg" id="sheetBg">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" id="sheet"></div>
   </div>
   <div class="toast" id="toast" role="status"></div>
 </main>
@@ -241,7 +268,7 @@ function me() {
 
 // ================== HELPERS ==================
 const $ = s => document.querySelector(s);
-const COLORS = [["#F2A93B","#E4577A"],["#2E9E7A","#3B1F4A"],["#E4577A","#7B4BA0"],["#3B7DD8","#2E9E7A"],["#F2A93B","#2E9E7A"],["#7B4BA0","#3B7DD8"]];
+const COLORS = [["#F4845F","#0F5E57"],["#14A38F","#0B3D38"],["#F7B267","#E0664A"],["#0F5E57","#14A38F"],["#F4845F","#C2553A"],["#5BB5A2","#0F5E57"]];
 function esc(t) { return String(t ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
 
 function avatar(p) {
@@ -287,19 +314,62 @@ $("#loginForm").onsubmit = async e => {
   } catch (err) { $("#loginErr").textContent = err.message; }
 };
 
+let otpSent = false;
+let resendTimer = null;
+
+function startResendCountdown() {
+  let left = 60;
+  const btn = $("#resendBtn");
+  btn.disabled = true;
+  clearInterval(resendTimer);
+  btn.textContent = `Code dobara bhejo (${left}s)`;
+  resendTimer = setInterval(() => {
+    left--;
+    if (left <= 0) { clearInterval(resendTimer); btn.disabled = false; btn.textContent = "Code dobara bhejo"; }
+    else btn.textContent = `Code dobara bhejo (${left}s)`;
+  }, 1000);
+}
+
+async function sendOtp() {
+  const email = $("#sEmail").value.trim();
+  const data = await api("/api/send-otp", { method: "POST", body: JSON.stringify({ email }) });
+  otpSent = true;
+  $("#otpBox").hidden = false;
+  $("#otpMsg").textContent = `${email} par code bheja. ${data.message.split(". ").slice(1).join(". ")}`;
+  $("#signupBtn").textContent = "Verify karke account banao";
+  $("#sEmail").readOnly = true;
+  startResendCountdown();
+  $("#sOtp").focus();
+}
+
+$("#resendBtn").onclick = async () => {
+  $("#signupErr").textContent = "";
+  try { await sendOtp(); } catch (err) { $("#signupErr").textContent = err.message; }
+};
+
 $("#signupForm").onsubmit = async e => {
   e.preventDefault();
   $("#signupErr").textContent = "";
+  const btn = $("#signupBtn");
+  btn.disabled = true;
+  if (!otpSent) {
+    try { await sendOtp(); } catch (err) { $("#signupErr").textContent = err.message; }
+    btn.disabled = false;
+    return;
+  }
   const body = {
     name: $("#sName").value.trim(), email: $("#sEmail").value.trim(), password: $("#sPass").value,
-    age: Number($("#sAge").value), gender: $("#sGender").value, city: $("#sCity").value.trim()
+    age: Number($("#sAge").value), gender: $("#sGender").value, city: $("#sCity").value.trim(),
+    otp: $("#sOtp").value.trim()
   };
+  if (!/^\d{6}$/.test(body.otp)) { $("#signupErr").textContent = "6 digit ka code daalo"; btn.disabled = false; return; }
   try {
     await api("/api/signup", { method: "POST", body: JSON.stringify(body) });
     const data = await api("/api/login", { method: "POST", body: JSON.stringify({ email: body.email, password: body.password }) });
     loginDone(data.token);
     toast("Account ban gaya, welcome!");
   } catch (err) { $("#signupErr").textContent = err.message; }
+  btn.disabled = false;
 };
 
 function loginDone(t) {
@@ -437,6 +507,10 @@ function connectSocket() {
   socket.on("connect", () => updateStatus());
   socket.on("disconnect", () => updateStatus());
   socket.on("connect_error", () => updateStatus());
+  socket.on("match_removed", ({ user_id }) => {
+    if (activeChat && activeChat.id === user_id) { showScreen("matches"); toast("Ye chat ab uplabdh nahi hai"); }
+    else if (document.querySelector("#screen-matches.active")) loadMatches();
+  });
   socket.on("new_message", msg => {
     if (activeChat && msg.from_user === activeChat.id) addMsg(msg);
     else toast("Naya message aaya hai");
@@ -492,6 +566,54 @@ $("#composer").onsubmit = e => {
     else { toast((reply && reply.error) || "Message nahi gaya"); input.value = text; }
   });
 };
+
+// ================== BLOCK / REPORT ==================
+const REASONS = ["Badtameezi", "Fake profile", "Spam ya scam", "Kuch aur"];
+
+function openSheet(html) { $("#sheet").innerHTML = html; $("#sheetBg").classList.add("show"); }
+function closeSheet() { $("#sheetBg").classList.remove("show"); }
+$("#sheetBg").onclick = e => { if (e.target.id === "sheetBg") closeSheet(); };
+
+$("#safetyBtn").onclick = () => {
+  if (!activeChat) return;
+  const n = esc(activeChat.name);
+  openSheet(`<h3 id="sheetTitle">${n} ke saath kya karna hai?</h3>
+    <p>Aapki suraksha sabse pehle. ${n} ko pata nahi chalega ki kisne report kiya.</p>
+    <button class="opt danger" id="optReport">Report karo</button>
+    <button class="opt" id="optBlock">Sirf block karo</button>
+    <button class="cancel" id="optCancel">Rehne do</button>`);
+  $("#optReport").onclick = showReasons;
+  $("#optBlock").onclick = confirmBlock;
+  $("#optCancel").onclick = closeSheet;
+};
+
+function showReasons() {
+  openSheet(`<h3 id="sheetTitle">Report ki wajah chuno</h3>
+    <p>Report karne par ye user aapke liye block bhi ho jayega.</p>
+    ${REASONS.map(r => `<button class="opt" data-r="${r}">${r}</button>`).join("")}
+    <button class="cancel" id="optCancel">Rehne do</button>`);
+  document.querySelectorAll("#sheet .opt").forEach(b => b.onclick = () => doSafety("/api/report", { user_id: activeChat.id, reason: b.dataset.r }));
+  $("#optCancel").onclick = closeSheet;
+}
+
+function confirmBlock() {
+  const n = esc(activeChat.name);
+  openSheet(`<h3 id="sheetTitle">${n} ko block karein?</h3>
+    <p>Aap dono ek-doosre ko nahi dekh paoge aur chat band ho jayegi. Ye wapas nahi hoga.</p>
+    <button class="opt danger" id="optYes">Haan, block karo</button>
+    <button class="cancel" id="optCancel">Rehne do</button>`);
+  $("#optYes").onclick = () => doSafety("/api/block", { user_id: activeChat.id });
+  $("#optCancel").onclick = closeSheet;
+}
+
+async function doSafety(path, body) {
+  try {
+    const data = await api(path, { method: "POST", body: JSON.stringify(body) });
+    closeSheet();
+    showScreen("matches");
+    toast(data.message.split(".")[0]);
+  } catch (err) { closeSheet(); toast(err.message); }
+}
 
 // ================== START ==================
 function startApp() {

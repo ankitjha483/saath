@@ -1,11 +1,15 @@
 require("dotenv").config();
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const { Pool } = require("pg");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const app = express();
 app.use(express.json());
+const server = http.createServer(app);
+const io = new Server(server);
 
 const db = new Pool({
   host: process.env.DB_HOST,
@@ -25,6 +29,17 @@ function authCheck(req, res, next) {
   } catch {
     return res.status(401).json({ error: "Pehle login karo" });
   }
+}
+
+// ---------- KYA DONO KA MATCH HAI? ----------
+async function isMatch(userA, userB) {
+  const result = await db.query(
+    `SELECT 1 FROM swipes a
+     JOIN swipes b ON a.from_user = b.to_user AND a.to_user = b.from_user
+     WHERE a.from_user = $1 AND a.to_user = $2 AND a.action = 'like' AND b.action = 'like'`,
+    [userA, userB]
+  );
+  return result.rowCount > 0;
 }
 
 app.use(express.static("public"));
@@ -81,7 +96,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ---------- PROFILES (sirf logged-in) ----------
+// ---------- PROFILES ----------
 app.get("/api/profiles", authCheck, async (req, res) => {
   try {
     const result = await db.query(
@@ -99,7 +114,7 @@ app.get("/api/profiles", authCheck, async (req, res) => {
   }
 });
 
-// ---------- SWIPE (Like / Pass) ----------
+// ---------- SWIPE ----------
 app.post("/api/swipe", authCheck, async (req, res) => {
   const { to_user, action } = req.body;
   if (!["like", "pass"].includes(action)) {
@@ -114,17 +129,8 @@ app.post("/api/swipe", authCheck, async (req, res) => {
        ON CONFLICT (from_user, to_user) DO UPDATE SET action = EXCLUDED.action`,
       [req.user.id, to_user, action]
     );
-
-    let isMatch = false;
-    if (action === "like") {
-      const check = await db.query(
-        "SELECT 1 FROM swipes WHERE from_user = $1 AND to_user = $2 AND action = 'like'",
-        [to_user, req.user.id]
-      );
-      isMatch = check.rowCount > 0;
-    }
-
-    res.json({ message: isMatch ? "It's a match! 🎉" : "Swipe save ho gaya", match: isMatch });
+    const match = action === "like" && (await isMatch(req.user.id, to_user));
+    res.json({ message: match ? "It's a match! 🎉" : "Swipe save ho gaya", match });
   } catch (err) {
     if (err.code === "23503") {
       return res.status(404).json({ error: "Ye user exist nahi karta" });
@@ -152,4 +158,61 @@ app.get("/api/matches", authCheck, async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("Server started: http://localhost:3000"));
+// ---------- PURANE MESSAGES ----------
+app.get("/api/messages/:otherId", authCheck, async (req, res) => {
+  const otherId = Number(req.params.otherId);
+  try {
+    if (!(await isMatch(req.user.id, otherId))) {
+      return res.status(403).json({ error: "Sirf match ke saath chat kar sakte ho" });
+    }
+    const result = await db.query(
+      `SELECT id, from_user, to_user, text, created_at FROM messages
+       WHERE (from_user = $1 AND to_user = $2) OR (from_user = $2 AND to_user = $1)
+       ORDER BY created_at`,
+      [req.user.id, otherId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Messages nahi mile" });
+  }
+});
+
+// ---------- LIVE CHAT (Socket.io) ----------
+io.use((socket, next) => {
+  try {
+    socket.user = jwt.verify(socket.handshake.auth.token, process.env.JWT_SECRET);
+    next();
+  } catch {
+    next(new Error("Pehle login karo"));
+  }
+});
+
+io.on("connection", (socket) => {
+  // Har user ka apna "kamra", taaki message sirf usi tak jaye
+  socket.join("user:" + socket.user.id);
+
+  socket.on("send_message", async ({ to_user, text }, reply) => {
+    text = String(text || "").trim();
+    if (!text || text.length > 1000) {
+      return reply({ error: "Message khaali ya bahut lamba hai" });
+    }
+    try {
+      if (!(await isMatch(socket.user.id, to_user))) {
+        return reply({ error: "Sirf match ke saath chat kar sakte ho" });
+      }
+      const result = await db.query(
+        "INSERT INTO messages (from_user, to_user, text) VALUES ($1, $2, $3) RETURNING id, from_user, to_user, text, created_at",
+        [socket.user.id, to_user, text]
+      );
+      const msg = result.rows[0];
+      io.to("user:" + to_user).emit("new_message", msg);
+      reply({ ok: true, message: msg });
+    } catch (err) {
+      console.error(err);
+      reply({ error: "Message nahi gaya, dobara try karo" });
+    }
+  });
+});
+
+server.listen(3000, () => console.log("Server started: http://localhost:3000"));    

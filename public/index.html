@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saath</title>
+<!-- saath-v2-chat -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hind:wght@400;500;600&display=swap" rel="stylesheet">
@@ -87,6 +88,23 @@ button{cursor:pointer}
 .tab svg{width:22px;height:22px}
 .tab.active{color:var(--plum);font-weight:600}
 
+/* chat */
+.chathead{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--line)}
+.chathead .mini{width:40px;height:40px}
+.backbtn{background:var(--chip);border:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center}
+.backbtn svg{width:20px;height:20px}
+.msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:78%;padding:8px 12px;border-radius:18px;line-height:1.35;word-wrap:break-word}
+.msg.them{background:var(--chip);align-self:flex-start;border-bottom-left-radius:6px}
+.msg.me{background:var(--plum);color:#fff;align-self:flex-end;border-bottom-right-radius:6px}
+.msg time{display:block;font-size:.7rem;opacity:.65;margin-top:2px}
+.sysnote{align-self:center;font-size:.85rem;color:var(--muted);text-align:center;max-width:32ch}
+.composer{display:flex;gap:8px;padding:8px 12px 12px;border-top:1px solid var(--line)}
+.composer input{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:10px 14px;min-width:0}
+.composer .primary{width:auto}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:6px;vertical-align:middle}
+.dot.on{background:var(--leaf)}
+
 /* overlay + toast */
 .overlay{position:absolute;inset:0;background:#3B1F4A;color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:32px;text-align:center;z-index:5}
 .overlay.show{display:flex}
@@ -154,12 +172,26 @@ button{cursor:pointer}
     </div>
   </section>
 
+  <!-- CHAT -->
+  <section class="screen" id="screen-chat">
+    <div class="chathead">
+      <button class="backbtn" id="backBtn" aria-label="Matches par wapas jao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"/></svg></button>
+      <div class="mini" id="chatAvatar"></div>
+      <div><b id="chatName"></b><div class="muted" style="font-size:.85rem" id="chatStatus"></div></div>
+    </div>
+    <div class="msgs" id="msgs" aria-live="polite"></div>
+    <form class="composer" id="composer">
+      <input id="msgInput" placeholder="Message likho" aria-label="Message" autocomplete="off" maxlength="1000">
+      <button class="primary" type="submit">Bhejo</button>
+    </form>
+  </section>
+
   <!-- PROFILE -->
   <section class="screen" id="screen-profile">
     <div class="scroll">
       <h2 class="section-title">Aapki profile</h2>
       <p id="profileInfo"></p>
-      <div class="note">Chat, block aur report agle steps mein aayenge.</div>
+      <div class="note">Block aur report agle step mein aayenge.</div>
       <button class="ghostbtn" id="logoutBtn">Logout</button>
     </div>
   </section>
@@ -179,6 +211,7 @@ button{cursor:pointer}
   <div class="toast" id="toast" role="status"></div>
 </main>
 
+<script src="/socket.io/socket.io.js"></script>
 <script>
 // ================== BACKEND SE BAAT ==================
 let token = null;
@@ -229,7 +262,8 @@ function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("s
 
 function showScreen(name) {
   document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === "screen-" + name));
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.screen === name));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.screen === name || (name === "chat" && t.dataset.screen === "matches")));
+  if (name !== "chat") activeChat = null;
   if (name === "matches") loadMatches();
 }
 document.querySelectorAll(".tab").forEach(t => t.onclick = () => showScreen(t.dataset.screen));
@@ -276,6 +310,7 @@ function loginDone(t) {
 
 function logout() {
   token = null;
+  if (socket) { socket.disconnect(); socket = null; }
   try { localStorage.removeItem("saath_token"); } catch (e) {}
   $("#tabs").hidden = true;
   $("#hello").textContent = "";
@@ -388,9 +423,75 @@ async function loadMatches() {
     const matches = await api("/api/matches");
     if (!matches.length) { list.innerHTML = `<p class="muted">Abhi koi match nahi. Discover mein kuch logon ko like karo.</p>`; return; }
     list.innerHTML = matches.map(m => `<button class="matchrow" data-name="${esc(m.name)}"><div class="mini">${avatar(m)}</div><div><b>${esc(m.name)}, ${esc(m.age)}</b><div class="muted">${esc(m.city || "")}</div></div></button>`).join("");
-    list.querySelectorAll(".matchrow").forEach(r => r.onclick = () => toast("Chat Step 6 mein aayegi"));
+    list.querySelectorAll(".matchrow").forEach((r, i) => r.onclick = () => openChat(matches[i]));
   } catch (err) { list.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
 }
+
+// ================== LIVE CHAT ==================
+let socket = null;
+let activeChat = null;
+
+function connectSocket() {
+  if (socket || typeof io === "undefined") return;
+  socket = io({ auth: { token } });
+  socket.on("connect", () => updateStatus());
+  socket.on("disconnect", () => updateStatus());
+  socket.on("connect_error", () => updateStatus());
+  socket.on("new_message", msg => {
+    if (activeChat && msg.from_user === activeChat.id) addMsg(msg);
+    else toast("Naya message aaya hai");
+  });
+}
+
+function updateStatus() {
+  const el = $("#chatStatus");
+  if (!el) return;
+  const on = socket && socket.connected;
+  el.innerHTML = `<span class="dot ${on ? "on" : ""}"></span>${on ? "Live chat judi hui hai" : "Connect ho raha hai..."}`;
+}
+
+function timeText(iso) {
+  try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; }
+}
+
+function addMsg(m) {
+  const mine = m.from_user === me().id;
+  const div = document.createElement("div");
+  div.className = "msg " + (mine ? "me" : "them");
+  div.innerHTML = `${esc(m.text)}<time>${timeText(m.created_at)}</time>`;
+  $("#msgs").appendChild(div);
+  $("#msgs").scrollTop = $("#msgs").scrollHeight;
+}
+
+async function openChat(person) {
+  activeChat = person;
+  $("#chatAvatar").innerHTML = avatar(person);
+  $("#chatName").textContent = person.name;
+  updateStatus();
+  showScreen("chat");
+  activeChat = person;
+  $("#msgs").innerHTML = `<div class="sysnote">Aapka ${esc(person.name)} ke saath match hua. Izzat se baat karo.</div>`;
+  try {
+    const history = await api("/api/messages/" + person.id);
+    history.forEach(addMsg);
+  } catch (err) { toast(err.message); }
+  $("#msgInput").focus();
+}
+
+$("#backBtn").onclick = () => showScreen("matches");
+
+$("#composer").onsubmit = e => {
+  e.preventDefault();
+  const input = $("#msgInput");
+  const text = input.value.trim();
+  if (!text || !activeChat) return;
+  if (!socket || !socket.connected) { toast("Chat abhi judi nahi hai, ek second ruko"); return; }
+  input.value = "";
+  socket.emit("send_message", { to_user: activeChat.id, text }, reply => {
+    if (reply && reply.ok) addMsg(reply.message);
+    else { toast((reply && reply.error) || "Message nahi gaya"); input.value = text; }
+  });
+};
 
 // ================== START ==================
 function startApp() {
@@ -398,6 +499,7 @@ function startApp() {
   $("#hello").textContent = user.name ? "Hi, " + user.name : "";
   $("#profileInfo").textContent = user.name ? `Aap ${user.name} ke naam se logged in ho (user id ${user.id}).` : "";
   $("#tabs").hidden = false;
+  connectSocket();
   showScreen("discover");
   loadProfiles();
 }

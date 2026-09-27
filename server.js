@@ -1,4 +1,4 @@
-// saath-v7-otp
+// saath-v8-auto
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -413,5 +413,78 @@ io.on("connection", (socket) => {
   });
 });
 
+// ---------- TABLES KHUD BANAO (migration) ----------
+// Server chalu hote hi check karta hai. Jo table pehle se hai use chhedta nahi.
+async function setupDatabase() {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(50) NOT NULL,
+      email VARCHAR(100) UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      age INT CHECK (age >= 18),
+      gender VARCHAR(10),
+      city VARCHAR(50),
+      job VARCHAR(100),
+      languages TEXT,
+      intent VARCHAR(50),
+      prompt_question TEXT,
+      prompt_answer TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS swipes (
+      id SERIAL PRIMARY KEY,
+      from_user INT REFERENCES users(id) ON DELETE CASCADE,
+      to_user INT REFERENCES users(id) ON DELETE CASCADE,
+      action VARCHAR(10) CHECK (action IN ('like', 'pass')),
+      created_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE (from_user, to_user)
+    );
+    CREATE TABLE IF NOT EXISTS messages (
+      id SERIAL PRIMARY KEY,
+      from_user INT REFERENCES users(id) ON DELETE CASCADE,
+      to_user INT REFERENCES users(id) ON DELETE CASCADE,
+      text TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS blocks (
+      id SERIAL PRIMARY KEY,
+      blocker INT REFERENCES users(id) ON DELETE CASCADE,
+      blocked INT REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE (blocker, blocked)
+    );
+    CREATE TABLE IF NOT EXISTS reports (
+      id SERIAL PRIMARY KEY,
+      reporter INT REFERENCES users(id) ON DELETE CASCADE,
+      reported INT REFERENCES users(id) ON DELETE CASCADE,
+      reason VARCHAR(50) NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS email_otps (
+      email VARCHAR(100) PRIMARY KEY,
+      code_hash TEXT NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      attempts INT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  // Purane likes jo demo profiles ko diye the, unka match bhi bana do
+  await db.query(`
+    INSERT INTO swipes (from_user, to_user, action)
+    SELECT s.to_user, s.from_user, 'like'
+    FROM swipes s
+    JOIN users u ON u.id = s.to_user
+    WHERE s.action = 'like' AND u.email LIKE '%@demo.com'
+    ON CONFLICT (from_user, to_user) DO NOTHING;
+  `);
+  console.log("Database tables ready");
+}
+
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log("Server started on port " + PORT));
+setupDatabase()
+  .catch(err => console.error("Database setup mein dikkat:", err))
+  .finally(() => {
+    server.listen(PORT, () => console.log("Server started on port " + PORT));
+  });

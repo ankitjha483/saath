@@ -15,6 +15,18 @@ const db = new Pool({
   database: process.env.DB_NAME
 });
 
+// ---------- SECURITY GUARD ----------
+function authCheck(req, res, next) {
+  const header = req.headers.authorization || "";
+  const token = header.replace("Bearer ", "");
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ error: "Pehle login karo" });
+  }
+}
+
 app.get("/", (req, res) => {
   res.send("Saath backend chal raha hai!");
 });
@@ -22,7 +34,6 @@ app.get("/", (req, res) => {
 // ---------- SIGN UP ----------
 app.post("/api/signup", async (req, res) => {
   const { name, email, password, age, gender, city } = req.body;
-
   if (!name || !email || !password || !age) {
     return res.status(400).json({ error: "Naam, email, password aur umar zaroori hai" });
   }
@@ -32,7 +43,6 @@ app.post("/api/signup", async (req, res) => {
   if (age < 18) {
     return res.status(400).json({ error: "Saath sirf 18+ logon ke liye hai" });
   }
-
   try {
     const hash = await bcrypt.hash(password, 10);
     const result = await db.query(
@@ -55,7 +65,6 @@ app.post("/api/login", async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ error: "Email aur password dono daalo" });
   }
-
   try {
     const result = await db.query(
       "SELECT id, name, password_hash FROM users WHERE email = $1",
@@ -63,11 +72,9 @@ app.post("/api/login", async (req, res) => {
     );
     const user = result.rows[0];
     const sahi = user && (await bcrypt.compare(password, user.password_hash));
-
     if (!sahi) {
       return res.status(401).json({ error: "Email ya password galat hai" });
     }
-
     const token = jwt.sign({ id: user.id, name: user.name }, process.env.JWT_SECRET, { expiresIn: "7d" });
     res.json({ message: `Welcome ${user.name}!`, token });
   } catch (err) {
@@ -76,11 +83,16 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ---------- PROFILES ----------
-app.get("/api/profiles", async (req, res) => {
+// ---------- PROFILES (sirf logged-in) ----------
+app.get("/api/profiles", authCheck, async (req, res) => {
   try {
     const result = await db.query(
-      "SELECT id, name, age, city, job, languages, intent, prompt_question, prompt_answer FROM users ORDER BY id"
+      `SELECT id, name, age, city, job, languages, intent, prompt_question, prompt_answer
+       FROM users
+       WHERE id <> $1
+         AND id NOT IN (SELECT to_user FROM swipes WHERE from_user = $1)
+       ORDER BY id`,
+      [req.user.id]
     );
     res.json(result.rows);
   } catch (err) {
@@ -89,4 +101,57 @@ app.get("/api/profiles", async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("Server started: http://localhost:3000"));   
+// ---------- SWIPE (Like / Pass) ----------
+app.post("/api/swipe", authCheck, async (req, res) => {
+  const { to_user, action } = req.body;
+  if (!["like", "pass"].includes(action)) {
+    return res.status(400).json({ error: "Action sirf 'like' ya 'pass' ho sakta hai" });
+  }
+  if (to_user === req.user.id) {
+    return res.status(400).json({ error: "Khud ko swipe nahi kar sakte" });
+  }
+  try {
+    await db.query(
+      `INSERT INTO swipes (from_user, to_user, action) VALUES ($1, $2, $3)
+       ON CONFLICT (from_user, to_user) DO UPDATE SET action = EXCLUDED.action`,
+      [req.user.id, to_user, action]
+    );
+
+    let isMatch = false;
+    if (action === "like") {
+      const check = await db.query(
+        "SELECT 1 FROM swipes WHERE from_user = $1 AND to_user = $2 AND action = 'like'",
+        [to_user, req.user.id]
+      );
+      isMatch = check.rowCount > 0;
+    }
+
+    res.json({ message: isMatch ? "It's a match! 🎉" : "Swipe save ho gaya", match: isMatch });
+  } catch (err) {
+    if (err.code === "23503") {
+      return res.status(404).json({ error: "Ye user exist nahi karta" });
+    }
+    console.error(err);
+    res.status(500).json({ error: "Kuch gadbad ho gayi, dobara try karo" });
+  }
+});
+
+// ---------- MATCHES ----------
+app.get("/api/matches", authCheck, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT u.id, u.name, u.age, u.city
+       FROM swipes a
+       JOIN swipes b ON a.from_user = b.to_user AND a.to_user = b.from_user
+       JOIN users u ON u.id = a.to_user
+       WHERE a.from_user = $1 AND a.action = 'like' AND b.action = 'like'`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Kuch gadbad ho gayi, dobara try karo" });
+  }
+});
+
+app.listen(3000, () => console.log("Server started: http://localhost:3000"));

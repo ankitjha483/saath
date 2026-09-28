@@ -1,4 +1,4 @@
-// saath-v8-auto
+// saath-v9-call
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -372,6 +372,48 @@ io.use((socket, next) => {
 io.on("connection", (socket) => {
   // Har user ka apna "kamra", taaki message sirf usi tak jaye
   socket.join("user:" + socket.user.id);
+
+  // ---------- VOICE CALL (WebRTC signaling) ----------
+  // Awaaz seedha dono phones ke beech jaati hai. Server sirf "milane" ka kaam karta hai.
+  socket.on("call:offer", async ({ to_user, sdp } = {}, reply = () => {}) => {
+    try {
+      if (!(await isMatch(socket.user.id, to_user))) {
+        return reply({ error: "Sirf match ko call kar sakte ho" });
+      }
+      if (await isDemoUser(to_user)) {
+        return reply({ error: "Ye demo profile hai, call nahi utha sakti. Kisi asli match ko call karo." });
+      }
+      const online = await io.in("user:" + to_user).fetchSockets();
+      if (!online.length) {
+        return reply({ error: "Ye abhi online nahi hain, baad mein try karo" });
+      }
+      io.to("user:" + to_user).emit("call:incoming", {
+        from_user: socket.user.id,
+        from_name: socket.user.name,
+        sdp
+      });
+      reply({ ok: true });
+    } catch (err) {
+      console.error(err);
+      reply({ error: "Call nahi lag paayi, dobara try karo" });
+    }
+  });
+
+  // Baaki call messages: sirf match ke beech aage bhejo
+  function relay(inEvent, outEvent) {
+    socket.on(inEvent, async (data = {}) => {
+      try {
+        if (!(await isMatch(socket.user.id, data.to_user))) return;
+        io.to("user:" + data.to_user).emit(outEvent, { ...data, from_user: socket.user.id });
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  }
+  relay("call:answer", "call:answered");
+  relay("call:ice", "call:ice");
+  relay("call:end", "call:ended");
+  relay("call:decline", "call:declined");
 
   socket.on("send_message", async ({ to_user, text }, reply) => {
     text = String(text || "").trim();

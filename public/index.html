@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saath</title>
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -103,7 +103,10 @@ button{cursor:pointer}
 .msg{max-width:78%;padding:8px 12px;border-radius:18px;line-height:1.35;word-wrap:break-word}
 .msg.them{background:var(--chip);align-self:flex-start;border-bottom-left-radius:6px}
 .msg.me{background:var(--plum);color:#fff;align-self:flex-end;border-bottom-right-radius:6px}
-.msg time{display:block;font-size:.7rem;opacity:.65;margin-top:2px}
+.msg .meta-row{display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:2px}
+.msg time{font-size:.7rem;opacity:.65}
+.tick{font-size:.75rem;opacity:.75;line-height:1}
+.tick.read{color:#7FE3FF;opacity:1}
 .sysnote{align-self:center;font-size:.85rem;color:var(--muted);text-align:center;max-width:32ch}
 .composer{display:flex;gap:8px;padding:8px 12px 12px;border-top:1px solid var(--line)}
 .composer input{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:10px 14px;min-width:0}
@@ -570,8 +573,17 @@ function connectSocket() {
     else if (document.querySelector("#screen-matches.active")) loadMatches();
   });
   socket.on("new_message", msg => {
-    if (activeChat && msg.from_user === activeChat.id) addMsg(msg);
-    else toast("New message received");
+    if (activeChat && msg.from_user === activeChat.id) {
+      addMsg(msg);
+      socket.emit("mark_read", { from_user: msg.from_user });
+    } else toast("New message received");
+  });
+  socket.on("messages_read", ({ by_user, ids }) => {
+    if (!activeChat || activeChat.id !== by_user) return;
+    (ids || []).forEach(id => {
+      const el = document.querySelector(`.msg[data-id="${id}"] .tick`);
+      if (el) { el.className = "tick read"; el.title = "Read"; el.textContent = "\u2713\u2713"; }
+    });
   });
 }
 
@@ -586,11 +598,18 @@ function timeText(iso) {
   try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; }
 }
 
+function tickFor(m) {
+  if (m.read_at) return '<span class="tick read" title="Read">\u2713\u2713</span>';
+  if (m.delivered_at) return '<span class="tick" title="Delivered">\u2713\u2713</span>';
+  return '<span class="tick" title="Sent">\u2713</span>';
+}
+
 function addMsg(m) {
   const mine = m.from_user === me().id;
   const div = document.createElement("div");
   div.className = "msg " + (mine ? "me" : "them");
-  div.innerHTML = `${esc(m.text)}<time>${timeText(m.created_at)}</time>`;
+  if (m.id) div.dataset.id = m.id;
+  div.innerHTML = `${esc(m.text)}<div class="meta-row"><time>${timeText(m.created_at)}</time>${mine ? tickFor(m) : ""}</div>`;
   $("#msgs").appendChild(div);
   $("#msgs").scrollTop = $("#msgs").scrollHeight;
 }

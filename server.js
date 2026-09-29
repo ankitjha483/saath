@@ -1,4 +1,4 @@
-// saath-v11-photo
+// saath-v12-status
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -405,11 +405,21 @@ app.get("/api/messages/:otherId", authCheck, async (req, res) => {
       return res.status(403).json({ error: "Sirf match ke saath chat kar sakte ho" });
     }
     const result = await db.query(
-      `SELECT id, from_user, to_user, text, created_at FROM messages
+      `SELECT id, from_user, to_user, text, created_at, delivered_at, read_at FROM messages
        WHERE (from_user = $1 AND to_user = $2) OR (from_user = $2 AND to_user = $1)
        ORDER BY created_at`,
       [req.user.id, otherId]
     );
+    // Jo unhone bheje aur maine ab khole, unhe read maark karo
+    const readIds = await db.query(
+      `UPDATE messages SET read_at = NOW()
+       WHERE to_user = $1 AND from_user = $2 AND read_at IS NULL
+       RETURNING id`,
+      [req.user.id, otherId]
+    );
+    if (readIds.rowCount > 0) {
+      io.to("user:" + otherId).emit("messages_read", { by_user: req.user.id, ids: readIds.rows.map(r => r.id) });
+    }
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -473,6 +483,21 @@ io.on("connection", (socket) => {
   relay("call:end", "call:ended");
   relay("call:decline", "call:declined");
 
+  // Chat khuli ho aur naya message aaye to turant "read" batao
+  socket.on("mark_read", async ({ from_user } = {}) => {
+    try {
+      const r = await db.query(
+        `UPDATE messages SET read_at = NOW()
+         WHERE to_user = $1 AND from_user = $2 AND read_at IS NULL
+         RETURNING id`,
+        [socket.user.id, from_user]
+      );
+      if (r.rowCount > 0) {
+        io.to("user:" + from_user).emit("messages_read", { by_user: socket.user.id, ids: r.rows.map(x => x.id) });
+      }
+    } catch (err) { console.error(err); }
+  });
+
   socket.on("send_message", async ({ to_user, text }, reply) => {
     text = String(text || "").trim();
     if (!text || text.length > 1000) {
@@ -487,6 +512,14 @@ io.on("connection", (socket) => {
         [socket.user.id, to_user, text]
       );
       const msg = result.rows[0];
+
+      // Saamne wala online hai? To turant "delivered" maark karo
+      const online = await io.in("user:" + to_user).fetchSockets();
+      if (online.length > 0) {
+        const d = await db.query("UPDATE messages SET delivered_at = NOW() WHERE id = $1 RETURNING delivered_at", [msg.id]);
+        msg.delivered_at = d.rows[0].delivered_at;
+      }
+
       io.to("user:" + to_user).emit("new_message", msg);
       reply({ ok: true, message: msg });
 

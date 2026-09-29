@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saath</title>
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -113,6 +113,17 @@ button{cursor:pointer}
 .composer .primary{width:auto}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:6px;vertical-align:middle}
 .dot.on{background:var(--leaf)}
+
+/* calls list */
+.callrow{display:flex;gap:12px;align-items:center;padding:10px;border-radius:16px;background:none;border:0;width:100%;text-align:left}
+.callrow:hover{background:var(--chip)}
+.callrow .t{flex:1;min-width:0}
+.callrow .t b{display:block}
+.callrow .t span{display:block;color:var(--muted);font-size:.9rem;display:flex;align-items:center;gap:4px}
+.callrow .dir{font-size:.9rem}
+.dir.in{color:var(--leaf)} .dir.out{color:var(--plum)} .dir.missed{color:var(--rose)}
+.callrow .callnow{background:var(--chip);border:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--plum);flex:none}
+.callrow .callnow svg{width:18px;height:18px}
 
 /* profile photo */
 .photowrap{display:flex;flex-direction:column;align-items:center;gap:12px;margin:6px 0 18px}
@@ -243,6 +254,14 @@ button{cursor:pointer}
     </form>
   </section>
 
+  <!-- CALLS -->
+  <section class="screen" id="screen-calls">
+    <div class="scroll">
+      <h2 class="section-title">Calls</h2>
+      <div id="callList"></div>
+    </div>
+  </section>
+
   <!-- PROFILE -->
   <section class="screen" id="screen-profile">
     <div class="scroll">
@@ -261,6 +280,7 @@ button{cursor:pointer}
   <nav class="tabs" id="tabs" hidden>
     <button class="tab active" data-screen="discover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="3"/></svg>Discover</button>
     <button class="tab" data-screen="matches"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>Matches</button>
+    <button class="tab" data-screen="calls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>Calls</button>
     <button class="tab" data-screen="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Profile</button>
   </nav>
 
@@ -344,6 +364,7 @@ function showScreen(name) {
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.screen === name || (name === "chat" && t.dataset.screen === "matches")));
   if (name !== "chat") activeChat = null;
   if (name === "matches") loadMatches();
+  if (name === "calls") loadCalls();
 }
 document.querySelectorAll(".tab").forEach(t => t.onclick = () => showScreen(t.dataset.screen));
 
@@ -560,6 +581,7 @@ function connectSocket() {
   socket.on("connect", () => updateStatus());
   socket.on("disconnect", () => updateStatus());
   socket.on("connect_error", () => updateStatus());
+  socket.on("calls_updated", () => { if (document.querySelector("#screen-calls.active")) loadCalls(); });
   socket.on("call:incoming", onIncomingCall);
   socket.on("call:answered", onCallAnswered);
   socket.on("call:ice", onRemoteIce);
@@ -806,6 +828,8 @@ async function onRemoteIce({ from_user, candidate }) {
 function onCallConnected() {
   if (!call || call.state === "active") return;
   call.state = "active";
+  call.answered = true;
+  call.startedAt = Date.now();
   clearTimeout(call.timer);
   showCall("active");
   $("#callScreen").classList.remove("ringing");
@@ -835,7 +859,10 @@ function cleanupCall() {
 
 function endCall(message, notify) {
   if (!call) return;
-  if (notify && socket) socket.emit("call:end", { to_user: call.peer.id });
+  if (notify && socket) {
+    const duration = call.startedAt ? (Date.now() - call.startedAt) / 1000 : 0;
+    socket.emit("call:end", { to_user: call.peer.id, role: call.role, answered: !!call.answered, duration });
+  }
   cleanupCall();
   if (message) toast(message);
 }
@@ -857,7 +884,60 @@ $("#callMute").onclick = () => {
   $("#callMute").setAttribute("aria-pressed", String(muted));
   $("#muteLabel").textContent = muted ? "Unmute" : "Mute";
 };
-window.addEventListener("beforeunload", () => { if (call && socket) socket.emit("call:end", { to_user: call.peer.id }); });
+window.addEventListener("beforeunload", () => {
+  if (call && socket) {
+    const duration = call.startedAt ? (Date.now() - call.startedAt) / 1000 : 0;
+    socket.emit("call:end", { to_user: call.peer.id, role: call.role, answered: !!call.answered, duration });
+  }
+});
+
+// ================== CALL HISTORY ==================
+function durText(sec) {
+  sec = Math.round(sec || 0);
+  if (sec <= 0) return "";
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m ? `${m}m ${s}s` : `${s}s`;
+}
+function callWhen(iso) {
+  try {
+    const d = new Date(iso), now = new Date();
+    const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (d.toDateString() === now.toDateString()) return "Today " + time;
+    const y = new Date(now); y.setDate(now.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return "Yesterday " + time;
+    return d.toLocaleDateString([], { day: "numeric", month: "short" }) + " " + time;
+  } catch (e) { return ""; }
+}
+const ARROW = {
+  in: '<span class="dir in" title="Incoming">\u2199</span>',
+  out: '<span class="dir out" title="Outgoing">\u2197</span>',
+  missed: '<span class="dir missed" title="Missed">\u2199</span>'
+};
+function callLine(c) {
+  if (c.status === "missed" || c.status === "declined") {
+    const label = c.direction === "out" ? (c.status === "declined" ? "Declined" : "No answer") : "Missed";
+    return (c.direction === "out" ? ARROW.out : ARROW.missed) + " " + label;
+  }
+  const d = durText(c.duration);
+  return (c.direction === "out" ? ARROW.out : ARROW.in) + " " + (d || "Answered");
+}
+async function loadCalls() {
+  const list = $("#callList");
+  list.innerHTML = `<p class="muted">Loading...</p>`;
+  try {
+    const calls = await api("/api/calls");
+    if (!calls.length) { list.innerHTML = `<p class="muted">No calls yet. Open a match and tap the phone icon to call.</p>`; return; }
+    list.innerHTML = calls.map(c => `<button class="callrow" data-id="${c.other.id}" data-name="${esc(c.other.name)}">
+      <div class="mini">${avatar(c.other)}</div>
+      <div class="t"><b>${esc(c.other.name)}</b><span>${callLine(c)} &middot; ${callWhen(c.created_at)}</span></div>
+      <span class="callnow" aria-label="Call ${esc(c.other.name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span>
+    </button>`).join("");
+    list.querySelectorAll(".callrow").forEach(r => r.onclick = () => {
+      activeChat = { id: +r.dataset.id, name: r.dataset.name };
+      startCall();
+    });
+  } catch (err) { list.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+}
 
 // ================== START ==================
 let myProfile = null;

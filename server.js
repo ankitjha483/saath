@@ -1,4 +1,4 @@
-// saath-v12-status
+// saath-v13-callhistory
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -397,6 +397,46 @@ app.post("/api/report", authCheck, async (req, res) => {
   }
 });
 
+// ---------- CALL HISTORY ----------
+async function logCall(caller, callee, status, duration) {
+  try {
+    await db.query(
+      "INSERT INTO calls (caller, callee, status, duration) VALUES ($1, $2, $3, $4)",
+      [caller, callee, status, Math.max(0, Math.round(duration || 0))]
+    );
+    // Dono ko batao ki call list badli
+    io.to("user:" + caller).emit("calls_updated");
+    io.to("user:" + callee).emit("calls_updated");
+  } catch (err) { console.error("logCall:", err); }
+}
+
+app.get("/api/calls", authCheck, async (req, res) => {
+  try {
+    const r = await db.query(
+      `SELECT c.id, c.caller, c.callee, c.status, c.duration, c.created_at,
+              u.id AS other_id, u.name AS other_name, u.photo_url AS other_photo
+       FROM calls c
+       JOIN users u ON u.id = CASE WHEN c.caller = $1 THEN c.callee ELSE c.caller END
+       WHERE c.caller = $1 OR c.callee = $1
+       ORDER BY c.created_at DESC
+       LIMIT 50`,
+      [req.user.id]
+    );
+    const rows = r.rows.map(x => ({
+      id: x.id,
+      direction: x.caller === req.user.id ? "out" : "in",
+      status: x.status,
+      duration: x.duration,
+      created_at: x.created_at,
+      other: { id: x.other_id, name: x.other_name, photo_url: x.other_photo }
+    }));
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not load call history" });
+  }
+});
+
 // ---------- PURANE MESSAGES ----------
 app.get("/api/messages/:otherId", authCheck, async (req, res) => {
   const otherId = Number(req.params.otherId);
@@ -480,8 +520,28 @@ io.on("connection", (socket) => {
   }
   relay("call:answer", "call:answered");
   relay("call:ice", "call:ice");
-  relay("call:end", "call:ended");
-  relay("call:decline", "call:declined");
+
+  // Call end: aage bhejo aur history mein likho (sirf caller ki taraf se, taaki ek hi entry bane)
+  socket.on("call:end", async (data = {}) => {
+    try {
+      if (!(await isMatch(socket.user.id, data.to_user))) return;
+      io.to("user:" + data.to_user).emit("call:ended", { ...data, from_user: socket.user.id });
+      if (data.role === "caller") {
+        const answered = data.answered ? "answered" : "missed";
+        await logCall(socket.user.id, data.to_user, answered, data.duration);
+      }
+    } catch (err) { console.error(err); }
+  });
+
+  // Call decline: aage bhejo aur "declined" likho (caller ke naam se)
+  socket.on("call:decline", async (data = {}) => {
+    try {
+      if (!(await isMatch(socket.user.id, data.to_user))) return;
+      io.to("user:" + data.to_user).emit("call:declined", { ...data, from_user: socket.user.id });
+      // socket.user ne decline kiya, matlab caller wo doosra hai
+      await logCall(data.to_user, socket.user.id, "declined", 0);
+    } catch (err) { console.error(err); }
+  });
 
   // Chat khuli ho aur naya message aaye to turant "read" batao
   socket.on("mark_read", async ({ from_user } = {}) => {

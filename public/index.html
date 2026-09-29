@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saath</title>
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -110,6 +110,13 @@ button{cursor:pointer}
 .composer .primary{width:auto}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:6px;vertical-align:middle}
 .dot.on{background:var(--leaf)}
+
+/* profile photo */
+.photowrap{display:flex;flex-direction:column;align-items:center;gap:12px;margin:6px 0 18px}
+.photo-big{width:130px;height:130px;border-radius:50%;overflow:hidden;border:3px solid var(--line);background:var(--chip)}
+.photo-big svg,.photo-big img{width:100%;height:100%;object-fit:cover;display:block}
+.uploadbtn{background:var(--plum);color:#fff;border:0;border-radius:999px;padding:10px 20px;font-weight:600}
+.uploadbtn[disabled]{opacity:.6}
 
 /* safety sheet */
 .callbtn-head{margin-left:auto;background:var(--chip);border:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--plum)}
@@ -237,6 +244,11 @@ button{cursor:pointer}
   <section class="screen" id="screen-profile">
     <div class="scroll">
       <h2 class="section-title">Your profile</h2>
+      <div class="photowrap">
+        <div class="photo-big" id="myPhoto"></div>
+        <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" hidden>
+        <button class="uploadbtn" id="uploadPhotoBtn">Add / change photo</button>
+      </div>
       <p id="profileInfo"></p>
       <div class="note">If someone bothers you, use the ⋮ button at the top of the chat to block or report them.</div>
       <button class="ghostbtn" id="logoutBtn">Logout</button>
@@ -306,6 +318,9 @@ const COLORS = [["#F4845F","#0F5E57"],["#14A38F","#0B3D38"],["#F7B267","#E0664A"
 function esc(t) { return String(t ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
 
 function avatar(p) {
+  if (p && p.photo_url) {
+    return `<img src="${p.photo_url.replace(/"/g,'&quot;')}" alt="${esc(p.name||'')}" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy">`;
+  }
   const [a, b] = COLORS[p.id % COLORS.length];
   const gid = "g" + p.id + Math.random().toString(36).slice(2, 6);
   return `<svg viewBox="0 0 300 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -826,6 +841,38 @@ $("#callMute").onclick = () => {
 window.addEventListener("beforeunload", () => { if (call && socket) socket.emit("call:end", { to_user: call.peer.id }); });
 
 // ================== START ==================
+let myProfile = null;
+
+async function loadMyProfile() {
+  try {
+    myProfile = await api("/api/me");
+    $("#myPhoto").innerHTML = avatar(myProfile);
+  } catch (e) {}
+}
+
+$("#uploadPhotoBtn").onclick = () => $("#photoInput").click();
+$("#photoInput").onchange = async () => {
+  const file = $("#photoInput").files[0];
+  if (!file) return;
+  const btn = $("#uploadPhotoBtn");
+  btn.disabled = true; btn.textContent = "Uploading...";
+  try {
+    const form = new FormData();
+    form.append("photo", file);
+    const res = await fetch("/api/photo", { method: "POST", headers: { Authorization: "Bearer " + token }, body: form });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Upload failed");
+    myProfile = myProfile || {};
+    myProfile.photo_url = data.photo_url;
+    $("#myPhoto").innerHTML = avatar(myProfile);
+    toast("Photo updated");
+  } catch (err) {
+    toast(err.message);
+  }
+  btn.disabled = false; btn.textContent = "Add / change photo";
+  $("#photoInput").value = "";
+};
+
 function startApp() {
   const user = me();
   $("#hello").textContent = user.name ? "Hi, " + user.name : "";
@@ -834,6 +881,7 @@ function startApp() {
   connectSocket();
   showScreen("discover");
   loadProfiles();
+  loadMyProfile();
 }
 
 if (token) startApp(); else showScreen("auth");

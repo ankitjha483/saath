@@ -1,4 +1,4 @@
-// saath-v9-call
+// saath-v11-photo
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -7,6 +7,8 @@ const { Pool } = require("pg");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const cloudinary = require("cloudinary").v2;
+const multer = require("multer");
 
 const app = express();
 app.use(express.json());
@@ -66,6 +68,25 @@ const DEMO_REPLIES = [
   "Chai ya coffee? Soch samajh ke jawab dena 😄",
   "Ek baat batao jo profile mein nahi likhi!"
 ];
+
+// ---------- CLOUDINARY (photo storage) ----------
+const photosEnabled = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+if (photosEnabled) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+}
+// Photo memory mein lo, max 5 MB, sirf images
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (/^image\/(jpeg|png|webp)$/.test(file.mimetype)) cb(null, true);
+    else cb(new Error("Only JPG, PNG or WEBP images are allowed"));
+  }
+});
 
 app.use(express.static("public"));
 
@@ -210,11 +231,48 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+// ---------- MERI PROFILE ----------
+app.get("/api/me", authCheck, async (req, res) => {
+  try {
+    const r = await db.query(
+      "SELECT id, name, email, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url FROM users WHERE id = $1",
+      [req.user.id]
+    );
+    res.json(r.rows[0] || {});
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not load your profile" });
+  }
+});
+
+// ---------- PHOTO UPLOAD ----------
+app.post("/api/photo", authCheck, (req, res) => {
+  if (!photosEnabled) {
+    return res.status(503).json({ error: "Photo upload is not set up on the server yet" });
+  }
+  upload.single("photo")(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: "No photo received" });
+    try {
+      const dataUri = "data:" + req.file.mimetype + ";base64," + req.file.buffer.toString("base64");
+      const result = await cloudinary.uploader.upload(dataUri, {
+        folder: "saath",
+        transformation: [{ width: 800, height: 800, crop: "fill", gravity: "face" }, { quality: "auto" }]
+      });
+      await db.query("UPDATE users SET photo_url = $1 WHERE id = $2", [result.secure_url, req.user.id]);
+      res.json({ photo_url: result.secure_url });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Photo upload failed, please try again" });
+    }
+  });
+});
+
 // ---------- PROFILES ----------
 app.get("/api/profiles", authCheck, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, name, age, city, job, languages, intent, prompt_question, prompt_answer
+      `SELECT id, name, age, city, job, languages, intent, prompt_question, prompt_answer, photo_url
        FROM users
        WHERE id <> $1
          AND id NOT IN (SELECT to_user FROM swipes WHERE from_user = $1)
@@ -267,7 +325,7 @@ app.post("/api/swipe", authCheck, async (req, res) => {
 app.get("/api/matches", authCheck, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT u.id, u.name, u.age, u.city
+      `SELECT u.id, u.name, u.age, u.city, u.photo_url
        FROM swipes a
        JOIN swipes b ON a.from_user = b.to_user AND a.to_user = b.from_user
        JOIN users u ON u.id = a.to_user

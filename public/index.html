@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saath</title>
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -165,8 +165,8 @@ button{cursor:pointer}
   <!-- LOGIN / SIGN UP -->
   <section class="screen" id="screen-auth">
     <div class="auth">
-      <h1>Milo, baat karo.</h1>
-      <p class="sub">Saath par conversation pehle aati hai, photo baad mein.</p>
+      <h1>Meet. Talk.</h1>
+      <p class="sub">On Saath, conversation comes first, photos later.</p>
       <div class="seg" role="group">
         <button id="tabLogin" aria-pressed="true">Login</button>
         <button id="tabSignup" aria-pressed="false">Sign up</button>
@@ -180,22 +180,22 @@ button{cursor:pointer}
       </form>
 
       <form id="signupForm" hidden>
-        <div class="field"><label for="sName">Naam</label><input id="sName" required></div>
+        <div class="field"><label for="sName">Name</label><input id="sName" required></div>
         <div class="field"><label for="sEmail">Email</label><input id="sEmail" type="email" required autocomplete="email"></div>
-        <div class="field"><label for="sPass">Password (kam se kam 8 characters)</label><input id="sPass" type="password" required minlength="8" autocomplete="new-password"></div>
+        <div class="field"><label for="sPass">Password (at least 8 characters)</label><input id="sPass" type="password" required minlength="8" autocomplete="new-password"></div>
         <div class="row">
-          <div class="field"><label for="sAge">Umar</label><input id="sAge" type="number" min="18" max="99" required></div>
-          <div class="field"><label for="sGender">Main hoon</label>
+          <div class="field"><label for="sAge">Age</label><input id="sAge" type="number" min="18" max="99" required></div>
+          <div class="field"><label for="sGender">I am</label>
             <select id="sGender"><option value="woman">Woman</option><option value="man">Man</option><option value="other">Other</option></select></div>
         </div>
-        <div class="field"><label for="sCity">City</label><input id="sCity" placeholder="Jaise Gurugram"></div>
+        <div class="field"><label for="sCity">City</label><input id="sCity" placeholder="e.g. Gurugram"></div>
         <div class="otpbox" id="otpBox" hidden>
           <p class="okmsg" id="otpMsg"></p>
-          <div class="field"><label for="sOtp">Email par aaya 6 digit code</label><input id="sOtp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div>
-          <button type="button" class="linkbtn" id="resendBtn">Code dobara bhejo</button>
+          <div class="field"><label for="sOtp">6-digit code sent to your email</label><input id="sOtp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div>
+          <button type="button" class="linkbtn" id="resendBtn">Resend code</button>
         </div>
         <p class="error" id="signupErr"></p>
-        <button class="primary" type="submit" id="signupBtn">Email par code bhejo</button>
+        <button class="primary" type="submit" id="signupBtn">Send code to email</button>
       </form>
     </div>
   </section>
@@ -212,7 +212,7 @@ button{cursor:pointer}
   <!-- MATCHES -->
   <section class="screen" id="screen-matches">
     <div class="scroll">
-      <h2 class="section-title">Aapke matches</h2>
+      <h2 class="section-title">Your matches</h2>
       <div id="matchList"></div>
     </div>
   </section>
@@ -220,25 +220,25 @@ button{cursor:pointer}
   <!-- CHAT -->
   <section class="screen" id="screen-chat">
     <div class="chathead">
-      <button class="backbtn" id="backBtn" aria-label="Matches par wapas jao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"/></svg></button>
+      <button class="backbtn" id="backBtn" aria-label="Back to matches"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"/></svg></button>
       <div class="mini" id="chatAvatar"></div>
       <div><b id="chatName"></b><div class="muted" style="font-size:.85rem" id="chatStatus"></div></div>
-      <button class="callbtn-head" id="callBtn" aria-label="Voice call karo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button>
-      <button class="menubtn" id="safetyBtn" aria-label="Block ya report karo"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+      <button class="callbtn-head" id="callBtn" aria-label="Start voice call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button>
+      <button class="menubtn" id="safetyBtn" aria-label="Block or report"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
     </div>
     <div class="msgs" id="msgs" aria-live="polite"></div>
     <form class="composer" id="composer">
-      <input id="msgInput" placeholder="Message likho" aria-label="Message" autocomplete="off" maxlength="1000">
-      <button class="primary" type="submit">Bhejo</button>
+      <input id="msgInput" placeholder="Type a message" aria-label="Message" autocomplete="off" maxlength="1000">
+      <button class="primary" type="submit">Send</button>
     </form>
   </section>
 
   <!-- PROFILE -->
   <section class="screen" id="screen-profile">
     <div class="scroll">
-      <h2 class="section-title">Aapki profile</h2>
+      <h2 class="section-title">Your profile</h2>
       <p id="profileInfo"></p>
-      <div class="note">Kisi se pareshani ho to chat mein upar ⋮ button se unhe block ya report kar sakte ho.</div>
+      <div class="note">If someone bothers you, use the ⋮ button at the top of the chat to block or report them.</div>
       <button class="ghostbtn" id="logoutBtn">Logout</button>
     </div>
   </section>
@@ -264,8 +264,8 @@ button{cursor:pointer}
     <p class="cstatus" id="callStatus" aria-live="polite"></p>
     <div class="callbtns">
       <div class="cwrap" id="wrapMute"><button class="cbtn" id="callMute" aria-label="Mute" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg></button><span class="clabel" id="muteLabel">Mute</span></div>
-      <div class="cwrap"><button class="cbtn end" id="callEnd" aria-label="Call kaato"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-3.2 0-6.2.9-8.8 2.6a1.5 1.5 0 0 0-.5 2l1.2 2a1.5 1.5 0 0 0 1.9.6l2.5-1.1a1.5 1.5 0 0 0 .9-1.4V12a13 13 0 0 1 5.6 0v1.7a1.5 1.5 0 0 0 .9 1.4l2.5 1.1a1.5 1.5 0 0 0 1.9-.6l1.2-2a1.5 1.5 0 0 0-.5-2A15.9 15.9 0 0 0 12 9z"/></svg></button><span class="clabel" id="endLabel">Kaato</span></div>
-      <div class="cwrap" id="wrapAccept"><button class="cbtn accept" id="callAccept" aria-label="Call uthao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button><span class="clabel">Uthao</span></div>
+      <div class="cwrap"><button class="cbtn end" id="callEnd" aria-label="End call"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-3.2 0-6.2.9-8.8 2.6a1.5 1.5 0 0 0-.5 2l1.2 2a1.5 1.5 0 0 0 1.9.6l2.5-1.1a1.5 1.5 0 0 0 .9-1.4V12a13 13 0 0 1 5.6 0v1.7a1.5 1.5 0 0 0 .9 1.4l2.5 1.1a1.5 1.5 0 0 0 1.9-.6l1.2-2a1.5 1.5 0 0 0-.5-2A15.9 15.9 0 0 0 12 9z"/></svg></button><span class="clabel" id="endLabel">End</span></div>
+      <div class="cwrap" id="wrapAccept"><button class="cbtn accept" id="callAccept" aria-label="Answer call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button><span class="clabel">Answer</span></div>
     </div>
     <audio id="remoteAudio" autoplay playsinline></audio>
   </div>
@@ -287,8 +287,8 @@ async function api(path, options = {}) {
     }
   });
   const data = await res.json().catch(() => ({}));
-  if (res.status === 401 && token) { logout(); throw new Error("Session khatam, dobara login karo"); }
-  if (!res.ok) throw new Error(data.error || "Kuch gadbad ho gayi");
+  if (res.status === 401 && token) { logout(); throw new Error("Session expired, please log in again"); }
+  if (!res.ok) throw new Error(data.error || "Something went wrong");
   return data;
 }
 
@@ -356,11 +356,11 @@ function startResendCountdown() {
   const btn = $("#resendBtn");
   btn.disabled = true;
   clearInterval(resendTimer);
-  btn.textContent = `Code dobara bhejo (${left}s)`;
+  btn.textContent = `Resend code (${left}s)`;
   resendTimer = setInterval(() => {
     left--;
-    if (left <= 0) { clearInterval(resendTimer); btn.disabled = false; btn.textContent = "Code dobara bhejo"; }
-    else btn.textContent = `Code dobara bhejo (${left}s)`;
+    if (left <= 0) { clearInterval(resendTimer); btn.disabled = false; btn.textContent = "Resend code"; }
+    else btn.textContent = `Resend code (${left}s)`;
   }, 1000);
 }
 
@@ -369,8 +369,8 @@ async function sendOtp() {
   const data = await api("/api/send-otp", { method: "POST", body: JSON.stringify({ email }) });
   otpSent = true;
   $("#otpBox").hidden = false;
-  $("#otpMsg").textContent = `${email} par code bheja. ${data.message.split(". ").slice(1).join(". ")}`;
-  $("#signupBtn").textContent = "Verify karke account banao";
+  $("#otpMsg").textContent = `${email}  — code sent. ${data.message.split(". ").slice(1).join(". ")}`;
+  $("#signupBtn").textContent = "Verify and create account";
   $("#sEmail").readOnly = true;
   startResendCountdown();
   $("#sOtp").focus();
@@ -396,12 +396,12 @@ $("#signupForm").onsubmit = async e => {
     age: Number($("#sAge").value), gender: $("#sGender").value, city: $("#sCity").value.trim(),
     otp: $("#sOtp").value.trim()
   };
-  if (!/^\d{6}$/.test(body.otp)) { $("#signupErr").textContent = "6 digit ka code daalo"; btn.disabled = false; return; }
+  if (!/^\d{6}$/.test(body.otp)) { $("#signupErr").textContent = "Enter the 6-digit code"; btn.disabled = false; return; }
   try {
     await api("/api/signup", { method: "POST", body: JSON.stringify(body) });
     const data = await api("/api/login", { method: "POST", body: JSON.stringify({ email: body.email, password: body.password }) });
     loginDone(data.token);
-    toast("Account ban gaya, welcome!");
+    toast("Account created, welcome!");
   } catch (err) { $("#signupErr").textContent = err.message; }
   btn.disabled = false;
 };
@@ -427,12 +427,12 @@ $("#logoutBtn").onclick = logout;
 let profiles = [];
 
 async function loadProfiles() {
-  $("#deck").innerHTML = `<div class="empty"><p>Profiles aa rahi hain...</p></div>`;
+  $("#deck").innerHTML = `<div class="empty"><p>Loading profiles...</p></div>`;
   try {
     profiles = (await api("/api/profiles")).reverse();
     renderDeck();
   } catch (err) {
-    $("#deck").innerHTML = `<div class="empty"><h3>Server se baat nahi ho paayi</h3><p>${esc(err.message)}. Check karo ki terminal mein server chal raha hai.</p></div>`;
+    $("#deck").innerHTML = `<div class="empty"><h3>Could not reach the server</h3><p>${esc(err.message)}. Check that the server is running.</p></div>`;
   }
 }
 
@@ -453,7 +453,7 @@ function renderDeck() {
   const deck = $("#deck");
   deck.innerHTML = "";
   if (!profiles.length) {
-    deck.innerHTML = `<div class="empty"><h3>Aapne sabko dekh liya</h3><p>Naye log judenge to yahan dikhenge.</p></div>`;
+    deck.innerHTML = `<div class="empty"><h3>You’ve seen everyone</h3><p>New people will show up here as they join.</p></div>`;
     return;
   }
   profiles.slice(-3).forEach((p, i, arr) => {
@@ -515,7 +515,7 @@ $("#passBtn").onclick = () => swipe("pass");
 
 function showMatch(p) {
   $("#ovAvatar").innerHTML = avatar(p);
-  $("#ovText").textContent = `Aap aur ${p.name} ek-doosre ko pasand karte ho.`;
+  $("#ovText").textContent = `You and ${p.name} liked each other.`;
   $("#overlay").classList.add("show");
 }
 $("#ovClose").onclick = () => $("#overlay").classList.remove("show");
@@ -523,10 +523,10 @@ $("#ovClose").onclick = () => $("#overlay").classList.remove("show");
 // ================== MATCHES ==================
 async function loadMatches() {
   const list = $("#matchList");
-  list.innerHTML = `<p class="muted">Load ho raha hai...</p>`;
+  list.innerHTML = `<p class="muted">Loading...</p>`;
   try {
     const matches = await api("/api/matches");
-    if (!matches.length) { list.innerHTML = `<p class="muted">Abhi koi match nahi. Discover mein kuch logon ko like karo.</p>`; return; }
+    if (!matches.length) { list.innerHTML = `<p class="muted">No matches yet. Like a few people in Discover.</p>`; return; }
     list.innerHTML = matches.map(m => `<button class="matchrow" data-name="${esc(m.name)}"><div class="mini">${avatar(m)}</div><div><b>${esc(m.name)}, ${esc(m.age)}</b><div class="muted">${esc(m.city || "")}</div></div></button>`).join("");
     list.querySelectorAll(".matchrow").forEach((r, i) => r.onclick = () => openChat(matches[i]));
   } catch (err) { list.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
@@ -545,18 +545,18 @@ function connectSocket() {
   socket.on("call:incoming", onIncomingCall);
   socket.on("call:answered", onCallAnswered);
   socket.on("call:ice", onRemoteIce);
-  socket.on("call:ended", ({ from_user }) => { if (call && call.peer.id === from_user) endCall("Call khatam ho gayi", false); });
+  socket.on("call:ended", ({ from_user }) => { if (call && call.peer.id === from_user) endCall("Call ended", false); });
   socket.on("call:declined", ({ from_user, reason }) => {
-    if (call && call.peer.id === from_user) endCall(reason === "busy" ? `${call.peer.name} abhi kisi aur call par hain` : `${call.peer.name} ne call nahi uthayi`, false);
+    if (call && call.peer.id === from_user) endCall(reason === "busy" ? `${call.peer.name} is on another call` : `${call.peer.name} didn’t answer`, false);
   });
   socket.on("match_removed", ({ user_id }) => {
-    if (call && call.peer.id === user_id) endCall("Call khatam ho gayi", false);
-    if (activeChat && activeChat.id === user_id) { showScreen("matches"); toast("Ye chat ab uplabdh nahi hai"); }
+    if (call && call.peer.id === user_id) endCall("Call ended", false);
+    if (activeChat && activeChat.id === user_id) { showScreen("matches"); toast("This chat is no longer available"); }
     else if (document.querySelector("#screen-matches.active")) loadMatches();
   });
   socket.on("new_message", msg => {
     if (activeChat && msg.from_user === activeChat.id) addMsg(msg);
-    else toast("Naya message aaya hai");
+    else toast("New message received");
   });
 }
 
@@ -564,7 +564,7 @@ function updateStatus() {
   const el = $("#chatStatus");
   if (!el) return;
   const on = socket && socket.connected;
-  el.innerHTML = `<span class="dot ${on ? "on" : ""}"></span>${on ? "Live chat judi hui hai" : "Connect ho raha hai..."}`;
+  el.innerHTML = `<span class="dot ${on ? "on" : ""}"></span>${on ? "Live chat connected" : "Connecting..."}`;
 }
 
 function timeText(iso) {
@@ -587,7 +587,7 @@ async function openChat(person) {
   updateStatus();
   showScreen("chat");
   activeChat = person;
-  $("#msgs").innerHTML = `<div class="sysnote">Aapka ${esc(person.name)} ke saath match hua. Izzat se baat karo.</div>`;
+  $("#msgs").innerHTML = `<div class="sysnote">You matched with ${esc(person.name)}. Be kind.</div>`;
   try {
     const history = await api("/api/messages/" + person.id);
     history.forEach(addMsg);
@@ -602,16 +602,16 @@ $("#composer").onsubmit = e => {
   const input = $("#msgInput");
   const text = input.value.trim();
   if (!text || !activeChat) return;
-  if (!socket || !socket.connected) { toast("Chat abhi judi nahi hai, ek second ruko"); return; }
+  if (!socket || !socket.connected) { toast("Chat not connected yet, one moment"); return; }
   input.value = "";
   socket.emit("send_message", { to_user: activeChat.id, text }, reply => {
     if (reply && reply.ok) addMsg(reply.message);
-    else { toast((reply && reply.error) || "Message nahi gaya"); input.value = text; }
+    else { toast((reply && reply.error) || "Message not sent"); input.value = text; }
   });
 };
 
 // ================== BLOCK / REPORT ==================
-const REASONS = ["Badtameezi", "Fake profile", "Spam ya scam", "Kuch aur"];
+const REASONS = ["Rude behaviour", "Fake profile", "Spam or scam", "Something else"];
 
 function openSheet(html) { $("#sheet").innerHTML = html; $("#sheetBg").classList.add("show"); }
 function closeSheet() { $("#sheetBg").classList.remove("show"); }
@@ -620,31 +620,31 @@ $("#sheetBg").onclick = e => { if (e.target.id === "sheetBg") closeSheet(); };
 $("#safetyBtn").onclick = () => {
   if (!activeChat) return;
   const n = esc(activeChat.name);
-  openSheet(`<h3 id="sheetTitle">${n} ke saath kya karna hai?</h3>
-    <p>Aapki suraksha sabse pehle. ${n} ko pata nahi chalega ki kisne report kiya.</p>
-    <button class="opt danger" id="optReport">Report karo</button>
-    <button class="opt" id="optBlock">Sirf block karo</button>
-    <button class="cancel" id="optCancel">Rehne do</button>`);
+  openSheet(`<h3 id="sheetTitle">What do you want to do about ${n}?</h3>
+    <p>Your safety comes first. ${n} won’t know who reported them.</p>
+    <button class="opt danger" id="optReport">Report</button>
+    <button class="opt" id="optBlock">Just block</button>
+    <button class="cancel" id="optCancel">Cancel</button>`);
   $("#optReport").onclick = showReasons;
   $("#optBlock").onclick = confirmBlock;
   $("#optCancel").onclick = closeSheet;
 };
 
 function showReasons() {
-  openSheet(`<h3 id="sheetTitle">Report ki wajah chuno</h3>
-    <p>Report karne par ye user aapke liye block bhi ho jayega.</p>
+  openSheet(`<h3 id="sheetTitle">Choose a reason to report</h3>
+    <p>Reporting will also block this user for you.</p>
     ${REASONS.map(r => `<button class="opt" data-r="${r}">${r}</button>`).join("")}
-    <button class="cancel" id="optCancel">Rehne do</button>`);
+    <button class="cancel" id="optCancel">Cancel</button>`);
   document.querySelectorAll("#sheet .opt").forEach(b => b.onclick = () => doSafety("/api/report", { user_id: activeChat.id, reason: b.dataset.r }));
   $("#optCancel").onclick = closeSheet;
 }
 
 function confirmBlock() {
   const n = esc(activeChat.name);
-  openSheet(`<h3 id="sheetTitle">${n} ko block karein?</h3>
-    <p>Aap dono ek-doosre ko nahi dekh paoge aur chat band ho jayegi. Ye wapas nahi hoga.</p>
-    <button class="opt danger" id="optYes">Haan, block karo</button>
-    <button class="cancel" id="optCancel">Rehne do</button>`);
+  openSheet(`<h3 id="sheetTitle">Block ${n}?</h3>
+    <p>You won’t see each other and the chat will close. This can’t be undone.</p>
+    <button class="opt danger" id="optYes">Yes, block</button>
+    <button class="cancel" id="optCancel">Cancel</button>`);
   $("#optYes").onclick = () => doSafety("/api/block", { user_id: activeChat.id });
   $("#optCancel").onclick = closeSheet;
 }
@@ -672,8 +672,8 @@ function showCall(mode) {
   scr.classList.toggle("ringing", mode === "outgoing" || mode === "incoming");
   $("#wrapAccept").hidden = mode !== "incoming";
   $("#wrapMute").hidden = mode === "incoming";
-  $("#endLabel").textContent = mode === "incoming" ? "Mana karo" : "Kaato";
-  setCallStatus({ outgoing: "Ring ho raha hai...", incoming: "Voice call aa rahi hai", connecting: "Jud raha hai..." }[mode] || "");
+  $("#endLabel").textContent = mode === "incoming" ? "Decline" : "End";
+  setCallStatus({ outgoing: "Ringing...", incoming: "Incoming voice call", connecting: "Connecting..." }[mode] || "");
 }
 
 async function getMic() {
@@ -691,8 +691,8 @@ function makePeer(peerId) {
   pc.onconnectionstatechange = () => {
     if (!call || call.pc !== pc) return;
     if (pc.connectionState === "connected") onCallConnected();
-    else if (pc.connectionState === "disconnected") setCallStatus("Network kamzor hai...");
-    else if (pc.connectionState === "failed") endCall("Call jud nahi paayi (network ki dikkat)", true);
+    else if (pc.connectionState === "disconnected") setCallStatus("Weak network...");
+    else if (pc.connectionState === "failed") endCall("Couldn’t connect (network issue)", true);
   };
   return pc;
 }
@@ -704,11 +704,11 @@ async function flushIce() {
 
 async function startCall() {
   if (!activeChat || call) return;
-  if (!socket || !socket.connected) { toast("Connection nahi hai, ek second ruko"); return; }
-  if (!navigator.mediaDevices || !window.RTCPeerConnection) { toast("Is browser mein call nahi chalegi"); return; }
+  if (!socket || !socket.connected) { toast("No connection, one moment"); return; }
+  if (!navigator.mediaDevices || !window.RTCPeerConnection) { toast("Calls aren’t supported in this browser"); return; }
   const peer = { id: activeChat.id, name: activeChat.name };
   let stream;
-  try { stream = await getMic(); } catch (e) { toast("Call ke liye mic ki permission do"); return; }
+  try { stream = await getMic(); } catch (e) { toast("Please allow microphone access for calls"); return; }
   call = { peer, stream, role: "caller", pendingIce: [], state: "outgoing" };
   call.pc = makePeer(peer.id);
   stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
@@ -716,11 +716,11 @@ async function startCall() {
   try {
     const offer = await call.pc.createOffer();
     await call.pc.setLocalDescription(offer);
-  } catch (e) { endCall("Call nahi lag paayi", false); return; }
+  } catch (e) { endCall("Call failed", false); return; }
   socket.emit("call:offer", { to_user: peer.id, sdp: call.pc.localDescription }, reply => {
-    if (!reply || !reply.ok) endCall((reply && reply.error) || "Call nahi lag paayi", false);
+    if (!reply || !reply.ok) endCall((reply && reply.error) || "Call failed", false);
   });
-  call.timer = setTimeout(() => { if (call && call.state !== "active") endCall("Jawab nahi mila", true); }, 30000);
+  call.timer = setTimeout(() => { if (call && call.state !== "active") endCall("No answer", true); }, 30000);
 }
 
 function onIncomingCall({ from_user, from_name, sdp }) {
@@ -734,7 +734,7 @@ function onIncomingCall({ from_user, from_name, sdp }) {
 async function acceptCall() {
   if (!call || call.state !== "incoming") return;
   let stream;
-  try { stream = await getMic(); } catch (e) { toast("Call ke liye mic ki permission do"); declineCall(); return; }
+  try { stream = await getMic(); } catch (e) { toast("Please allow microphone access for calls"); declineCall(); return; }
   call.stream = stream;
   call.state = "connecting";
   call.pc = makePeer(call.peer.id);
@@ -746,7 +746,7 @@ async function acceptCall() {
     const answer = await call.pc.createAnswer();
     await call.pc.setLocalDescription(answer);
     socket.emit("call:answer", { to_user: call.peer.id, sdp: call.pc.localDescription });
-  } catch (e) { endCall("Call jud nahi paayi", true); }
+  } catch (e) { endCall("Couldn’t connect the call", true); }
 }
 
 function declineCall() {
@@ -760,7 +760,7 @@ async function onCallAnswered({ from_user, sdp }) {
   call.state = "connecting";
   showCall("connecting");
   try { await call.pc.setRemoteDescription(sdp); await flushIce(); }
-  catch (e) { endCall("Call jud nahi paayi", true); }
+  catch (e) { endCall("Couldn’t connect the call", true); }
 }
 
 async function onRemoteIce({ from_user, candidate }) {
@@ -811,7 +811,7 @@ $("#callAccept").onclick = acceptCall;
 $("#callEnd").onclick = () => {
   if (!call) return;
   if (call.state === "incoming") declineCall();
-  else endCall("Call khatam", true);
+  else endCall("Call ended", true);
 };
 $("#callMute").onclick = () => {
   if (!call || !call.stream) return;
@@ -829,7 +829,7 @@ window.addEventListener("beforeunload", () => { if (call && socket) socket.emit(
 function startApp() {
   const user = me();
   $("#hello").textContent = user.name ? "Hi, " + user.name : "";
-  $("#profileInfo").textContent = user.name ? `Aap ${user.name} ke naam se logged in ho (user id ${user.id}).` : "";
+  $("#profileInfo").textContent = user.name ? `Logged in as ${user.name} (user id ${user.id}).` : "";
   $("#tabs").hidden = false;
   connectSocket();
   showScreen("discover");

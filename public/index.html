@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saath">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -276,6 +276,10 @@ button{cursor:pointer}
   <section class="screen" id="screen-matches">
     <div class="scroll">
       <h2 class="section-title">Your matches</h2>
+      <button class="status-add" id="inviteBtn2" style="margin-bottom:14px">
+        <div class="plus" style="font-size:1.2rem">✉</div>
+        <div><b>Invite friends</b><div class="muted" style="font-size:.9rem">Share Saath and find more people</div></div>
+      </button>
       <div id="matchList"></div>
     </div>
   </section>
@@ -344,6 +348,7 @@ button{cursor:pointer}
         <p class="okmsg" id="editMsg"></p>
         <button class="primary" type="submit" id="saveProfileBtn" style="width:100%">Save profile</button>
       </form>
+      <button class="uploadbtn" id="inviteBtn" style="width:100%;margin-top:6px">Invite friends to Saath</button>
       <div class="note" style="margin-top:20px">If someone bothers you, use the ⋮ button at the top of a chat to block or report them.</div>
       <button class="ghostbtn" id="logoutBtn" style="margin-top:12px">Logout</button>
       <button class="dangerbtn" id="deleteBtn">Delete my account</button>
@@ -1060,6 +1065,35 @@ async function loadCalls() {
     });
   } catch (err) { list.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
 }
+
+// ================== INVITE / SHARE ==================
+const INVITE_URL = location.origin;
+const INVITE_TEXT = "Hey! I'm on Saath — chat, voice call and status, all in one app. Join me: " + INVITE_URL;
+
+async function inviteFriends() {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "Saath", text: INVITE_TEXT, url: INVITE_URL });
+    } catch (e) { /* user cancelled */ }
+  } else {
+    try {
+      await navigator.clipboard.writeText(INVITE_TEXT);
+      toast("Invite link copied! Paste it to your friends.");
+    } catch (e) {
+      openSheet(`<h3 id="sheetTitle">Invite friends</h3><p>Copy this and send it to your friends:</p>
+        <div class="field"><input id="inviteInput" readonly value="${INVITE_TEXT.replace(/"/g,'&quot;')}" style="width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg)"></div>
+        <button class="opt" id="inviteCopy">Copy</button>
+        <button class="cancel" id="inviteClose">Close</button>`);
+      $("#inviteInput").onclick = () => $("#inviteInput").select();
+      $("#inviteCopy").onclick = () => { $("#inviteInput").select(); document.execCommand("copy"); toast("Copied!"); closeSheet(); };
+      $("#inviteClose").onclick = closeSheet;
+    }
+  }
+}
+
+document.addEventListener("click", e => {
+  if (e.target.closest("#inviteBtn") || e.target.closest("#inviteBtn2")) inviteFriends();
+});
 
 // ================== STATUS / STORY ==================
 $("#addStatusBtn").onclick = () => {

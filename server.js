@@ -1,4 +1,4 @@
-// saath-v28-pushtest
+// saath-v29-selfping
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -342,6 +342,17 @@ app.post("/api/reset-password", async (req, res) => {
 });
 
 // ---------- PUSH: public key, subscribe, unsubscribe ----------
+// ---------- SELF-PING (keeps free server awake, no email, no account) ----------
+// Render deta hai RENDER_EXTERNAL_URL. Har 14 min server khud ko chhuta hai taaki na soye.
+app.get("/healthz", (req, res) => res.send("ok"));
+const SELF_URL = process.env.RENDER_EXTERNAL_URL;
+if (SELF_URL) {
+  setInterval(() => {
+    fetch(SELF_URL + "/healthz").catch(() => {});
+  }, 14 * 60 * 1000);
+  console.log("Self-ping enabled:", SELF_URL);
+}
+
 app.get("/api/push/key", (req, res) => {
   res.json({ key: process.env.VAPID_PUBLIC || "", enabled: pushEnabled });
 });

@@ -1,4 +1,4 @@
-// saath-v13-callhistory
+// saath-v14-notify
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -325,7 +325,10 @@ app.post("/api/swipe", authCheck, async (req, res) => {
 app.get("/api/matches", authCheck, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT u.id, u.name, u.age, u.city, u.photo_url
+      `SELECT u.id, u.name, u.age, u.city, u.photo_url,
+              (SELECT MAX(created_at) FROM messages m
+               WHERE (m.from_user = $1 AND m.to_user = u.id) OR (m.from_user = u.id AND m.to_user = $1)
+              ) AS last_msg_at
        FROM swipes a
        JOIN swipes b ON a.from_user = b.to_user AND a.to_user = b.from_user
        JOIN users u ON u.id = a.to_user
@@ -333,7 +336,8 @@ app.get("/api/matches", authCheck, async (req, res) => {
          AND NOT EXISTS (
            SELECT 1 FROM blocks
            WHERE (blocker = $1 AND blocked = u.id) OR (blocker = u.id AND blocked = $1)
-         )`,
+         )
+       ORDER BY last_msg_at DESC NULLS LAST, u.id DESC`,
       [req.user.id]
     );
     res.json(result.rows);

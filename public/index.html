@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saath</title>
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -565,6 +565,7 @@ async function loadMatches() {
   list.innerHTML = `<p class="muted">Loading...</p>`;
   try {
     const matches = await api("/api/matches");
+    knownMatches = matches;
     if (!matches.length) { list.innerHTML = `<p class="muted">No matches yet. Like a few people in Discover.</p>`; return; }
     list.innerHTML = matches.map(m => `<button class="matchrow" data-name="${esc(m.name)}"><div class="mini">${avatar(m)}</div><div><b>${esc(m.name)}, ${esc(m.age)}</b><div class="muted">${esc(m.city || "")}</div></div></button>`).join("");
     list.querySelectorAll(".matchrow").forEach((r, i) => r.onclick = () => openChat(matches[i]));
@@ -598,7 +599,13 @@ function connectSocket() {
     if (activeChat && msg.from_user === activeChat.id) {
       addMsg(msg);
       socket.emit("mark_read", { from_user: msg.from_user });
-    } else toast("New message received");
+    } else {
+      const who = nameFor(msg.from_user);
+      toast("New message" + (who ? " from " + who : ""));
+      notify(who ? who : "New message", msg.text);
+    }
+    // Matches list ko refresh karo taaki naya chat upar aaye
+    if (document.querySelector("#screen-matches.active")) loadMatches();
   });
   socket.on("messages_read", ({ by_user, ids }) => {
     if (!activeChat || activeChat.id !== by_user) return;
@@ -784,6 +791,7 @@ function onIncomingCall({ from_user, from_name, sdp }) {
   call = { peer: { id: from_user, name: from_name }, role: "callee", offer: sdp, pendingIce: [], state: "incoming" };
   showCall("incoming");
   if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]);
+  notify("Incoming call", from_name + " is calling you");
   call.timer = setTimeout(() => { if (call && call.state === "incoming") declineCall(); }, 30000);
 }
 
@@ -939,6 +947,31 @@ async function loadCalls() {
   } catch (err) { list.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
 }
 
+// ================== NOTIFICATIONS ==================
+let knownMatches = [];
+
+function nameFor(id) {
+  const m = knownMatches.find(x => x.id === id);
+  return m ? m.name : null;
+}
+
+function askNotifyPermission() {
+  try {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  } catch (e) {}
+}
+
+function notify(title, body) {
+  try {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    if (document.visibilityState === "visible") return; // app saamne hai to sirf toast kaafi hai
+    const n = new Notification(title, { body: (body || "").slice(0, 120), tag: "saath" });
+    n.onclick = () => { window.focus(); n.close(); };
+  } catch (e) {}
+}
+
 // ================== START ==================
 let myProfile = null;
 
@@ -978,9 +1011,11 @@ function startApp() {
   $("#profileInfo").textContent = user.name ? `Logged in as ${user.name} (user id ${user.id}).` : "";
   $("#tabs").hidden = false;
   connectSocket();
+  loadMatches();
   showScreen("discover");
   loadProfiles();
   loadMyProfile();
+  askNotifyPermission();
 }
 
 if (token) startApp(); else showScreen("auth");

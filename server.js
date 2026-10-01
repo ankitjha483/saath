@@ -1,4 +1,4 @@
-// saath-v16-editprofile
+// saath-v17-delete
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -282,6 +282,18 @@ app.put("/api/me", authCheck, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Could not save your profile, please try again" });
+  }
+});
+
+// ---------- DELETE MY ACCOUNT ----------
+// ON DELETE CASCADE ki wajah se iske saath hi swipes, messages, blocks, reports, calls bhi hat jayenge.
+app.delete("/api/me", authCheck, async (req, res) => {
+  try {
+    await db.query("DELETE FROM users WHERE id = $1", [req.user.id]);
+    res.json({ message: "Your account and all your data have been deleted." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not delete your account, please try again" });
   }
 });
 

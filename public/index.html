@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saath">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -162,6 +162,23 @@ button{cursor:pointer}
 .callrow .callnow{background:var(--chip);border:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--plum);flex:none}
 .callrow .callnow svg{width:18px;height:18px}
 
+/* search people */
+.searchbar{margin:8px 16px 0;position:relative}
+.searchbar input{width:100%;padding:11px 40px 11px 38px;border-radius:999px;border:1px solid var(--line);background:var(--bg);font:inherit}
+.searchbar .sicon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);width:18px;height:18px}
+.searchbar .sclear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--chip);border:0;width:24px;height:24px;border-radius:50%;cursor:pointer;color:var(--muted)}
+.searchResults{position:absolute;left:16px;right:16px;top:52px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 40px -20px rgba(15,94,87,.4);max-height:60vh;overflow-y:auto;z-index:6}
+.searchResults[hidden]{display:none}
+.sresult{display:flex;gap:12px;align-items:center;padding:10px 12px;border:0;background:none;width:100%;text-align:left;cursor:pointer;border-bottom:1px solid var(--line)}
+.sresult:hover{background:var(--chip)}
+.sresult .mini{width:46px;height:46px}
+.sresult .t{flex:1;min-width:0}
+.sresult .t b{display:block}
+.sresult .t span{color:var(--muted);font-size:.85rem}
+.tagx{font-size:.72rem;padding:2px 8px;border-radius:999px;flex:none}
+.tagx.liked{background:#E1F2EE;color:var(--leaf)}
+.tagx.passed{background:#FBE4E3;color:var(--rose)}
+
 /* view someone's profile */
 .vp-photo{width:100%;max-width:300px;aspect-ratio:1;border-radius:20px;overflow:hidden;margin:4px auto 16px;background:var(--chip)}
 .vp-photo svg,.vp-photo img{width:100%;height:100%;object-fit:cover;display:block}
@@ -289,6 +306,12 @@ button{cursor:pointer}
 
   <!-- DISCOVER -->
   <section class="screen" id="screen-discover">
+      <div class="searchbar">
+        <svg class="sicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3" stroke-linecap="round"/></svg>
+        <input id="searchInput" type="search" placeholder="Search people by name or city" autocomplete="off">
+        <button class="sclear" id="searchClear" hidden aria-label="Clear">×</button>
+        <div class="searchResults" id="searchResults" hidden></div>
+      </div>
       <button id="inviteBtn3" style="margin:8px 16px 0;background:var(--chip);border:0;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;text-align:left;cursor:pointer">
         <span style="width:34px;height:34px;border-radius:50%;background:var(--plum);color:#fff;display:grid;place-items:center;flex:none">✉</span>
         <span style="flex:1"><b style="display:block;font-size:.95rem">Invite friends</b><span class="muted" style="font-size:.82rem">Share Saath with people you know</span></span>
@@ -1150,6 +1173,43 @@ async function loadCalls() {
   } catch (err) { list.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
 }
 
+// ================== SEARCH PEOPLE ==================
+let searchTimer = null;
+$("#searchInput").addEventListener("input", () => {
+  const q = $("#searchInput").value.trim();
+  $("#searchClear").hidden = !q;
+  clearTimeout(searchTimer);
+  if (!q) { $("#searchResults").hidden = true; return; }
+  searchTimer = setTimeout(() => runSearch(q), 300);
+});
+$("#searchClear").onclick = () => {
+  $("#searchInput").value = "";
+  $("#searchClear").hidden = true;
+  $("#searchResults").hidden = true;
+};
+
+async function runSearch(q) {
+  const box = $("#searchResults");
+  box.hidden = false;
+  box.innerHTML = `<div style="padding:14px" class="muted">Searching...</div>`;
+  try {
+    const people = await api("/api/search?q=" + encodeURIComponent(q));
+    if (!people.length) { box.innerHTML = `<div style="padding:14px" class="muted">No one found.</div>`; return; }
+    box.innerHTML = people.map((p, i) => {
+      let tag = "";
+      if (p.my_action === "like") tag = `<span class="tagx liked">Liked</span>`;
+      else if (p.my_action === "pass") tag = `<span class="tagx passed">Passed</span>`;
+      const meta = [p.city, p.age].filter(Boolean).map(esc).join(" · ");
+      return `<button class="sresult" data-i="${i}"><div class="mini">${avatar(p)}</div><div class="t"><b>${esc(p.name)}</b><span>${meta}</span></div>${tag}</button>`;
+    }).join("");
+    box.querySelectorAll(".sresult").forEach(btn => btn.onclick = () => {
+      const person = people[+btn.dataset.i];
+      box.hidden = true;
+      openProfileOf(person);
+    });
+  } catch (err) { box.innerHTML = `<div style="padding:14px" class="muted">${esc(err.message)}</div>`; }
+}
+
 // ================== VIEW SOMEONE'S PROFILE ==================
 let lastScreenBeforeProfile = "matches";
 function openProfileOf(person) {
@@ -1159,16 +1219,35 @@ function openProfileOf(person) {
   const meta = [person.job, person.city].filter(Boolean).map(esc).join(" · ");
   const prompt = person.prompt_question ? `<div class="vp-prompt"><b>${esc(person.prompt_question)}</b>${esc(person.prompt_answer||"")}</div>` : "";
   const chips = [person.intent, person.languages ? "Speaks " + person.languages : null].filter(Boolean).map(c => `<span class="chip">${esc(c)}</span>`).join("");
+  let actionHtml = "";
+  if (person.my_action === "like") actionHtml = `<p class="okmsg" style="margin-top:16px">You liked this person.</p>`;
+  else actionHtml = `<div style="display:flex;gap:12px;margin-top:18px">
+      <button class="ghostbtn" id="vpPass" style="flex:1">Pass</button>
+      <button class="primary" id="vpLike" style="flex:1">Like</button>
+    </div>`;
   $("#vpBody").innerHTML = `
     <div class="vp-photo">${avatar(person)}</div>
     <div class="vp-name">${esc(person.name)}${person.age ? ", " + esc(person.age) : ""}</div>
     ${meta ? `<div class="vp-meta">${meta}</div>` : ""}
     ${prompt}
     ${chips ? `<div class="vp-chips">${chips}</div>` : ""}
+    ${actionHtml}
   `;
+  const likeBtn = document.getElementById("vpLike");
+  const passBtn = document.getElementById("vpPass");
+  if (likeBtn) likeBtn.onclick = () => actOnProfile(person, "like");
+  if (passBtn) passBtn.onclick = () => actOnProfile(person, "pass");
   showScreen("viewprofile");
 }
 $("#vpBack").onclick = () => showScreen(lastScreenBeforeProfile);
+
+async function actOnProfile(person, action) {
+  try {
+    const data = await api("/api/swipe", { method: "POST", body: JSON.stringify({ to_user: person.id, action }) });
+    if (action === "like" && data.match) { showScreen("discover"); showMatch(person); }
+    else { toast(action === "like" ? "Liked!" : "Passed"); showScreen(lastScreenBeforeProfile); }
+  } catch (err) { toast(err.message); }
+}
 
 // ================== INVITE / SHARE ==================
 const INVITE_URL = location.origin;

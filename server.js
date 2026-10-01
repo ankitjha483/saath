@@ -1,4 +1,4 @@
-// saath-v26-forgot
+// saath-v27-push
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
+const webpush = require("web-push");
 
 const app = express();
 app.use(express.json());
@@ -94,6 +95,35 @@ const upload = multer({
     else cb(new Error("Only JPG, PNG or WEBP images are allowed"));
   }
 });
+
+// ---------- PUSH NOTIFICATIONS (web-push) ----------
+const pushEnabled = !!(process.env.VAPID_PUBLIC && process.env.VAPID_PRIVATE);
+if (pushEnabled) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || "mailto:example@example.com",
+    process.env.VAPID_PUBLIC,
+    process.env.VAPID_PRIVATE
+  );
+}
+
+// kisi user ke saare devices par push bhejo
+async function sendPush(userId, payload) {
+  if (!pushEnabled) return;
+  try {
+    const subs = await db.query("SELECT endpoint, p256dh, auth FROM push_subs WHERE user_id = $1", [userId]);
+    for (const s of subs.rows) {
+      const sub = { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } };
+      try {
+        await webpush.sendNotification(sub, JSON.stringify(payload));
+      } catch (err) {
+        // 404/410 matlab subscription purana ho gaya, hata do
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          await db.query("DELETE FROM push_subs WHERE endpoint = $1", [s.endpoint]);
+        }
+      }
+    }
+  } catch (err) { console.error("sendPush:", err); }
+}
 
 app.use(express.static("public"));
 
@@ -308,6 +338,27 @@ app.post("/api/reset-password", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Could not reset password, try again" });
+  }
+});
+
+// ---------- PUSH: public key, subscribe, unsubscribe ----------
+app.get("/api/push/key", (req, res) => {
+  res.json({ key: process.env.VAPID_PUBLIC || "", enabled: pushEnabled });
+});
+
+app.post("/api/push/subscribe", authCheck, async (req, res) => {
+  const sub = req.body.subscription;
+  if (!sub || !sub.endpoint || !sub.keys) return res.status(400).json({ error: "Invalid subscription" });
+  try {
+    await db.query(
+      `INSERT INTO push_subs (user_id, endpoint, p256dh, auth) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (endpoint) DO UPDATE SET user_id = EXCLUDED.user_id, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth`,
+      [req.user.id, sub.endpoint, sub.keys.p256dh, sub.keys.auth]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not save subscription" });
   }
 });
 
@@ -874,6 +925,13 @@ io.on("connection", async (socket) => {
       io.to("user:" + to_user).emit("new_message", msg);
       reply({ ok: true, message: msg });
 
+      // Push notification bhejo (app band ho to bhi aaye)
+      sendPush(to_user, {
+        title: socket.user.name || "New message",
+        body: text.slice(0, 120),
+        url: "/"
+      });
+
       // Demo profile ho to 1.5 second baad auto-reply
       if (await isDemoUser(to_user)) {
         const sender = socket.user.id;
@@ -975,6 +1033,14 @@ async function setupDatabase() {
       callee INT REFERENCES users(id) ON DELETE CASCADE,
       status VARCHAR(12) NOT NULL,
       duration INT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS push_subs (
+      id SERIAL PRIMARY KEY,
+      user_id INT REFERENCES users(id) ON DELETE CASCADE,
+      endpoint TEXT UNIQUE NOT NULL,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);

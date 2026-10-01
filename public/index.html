@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saath</title>
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -139,6 +139,12 @@ button{cursor:pointer}
 .story-bars .bar{flex:1;height:3px;background:rgba(255,255,255,.3);border-radius:3px;overflow:hidden}
 .story-bars .bar > i{display:block;height:100%;width:0;background:#fff}
 .status-del{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(217,83,79,.9);color:#fff;border:0;border-radius:999px;padding:10px 20px}
+.status-views{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.2);color:#fff;border:0;border-radius:999px;padding:8px 18px;display:flex;align-items:center;gap:6px}
+.status-views svg{width:18px;height:18px}
+.viewer-row{display:flex;gap:12px;align-items:center;padding:8px 2px}
+.viewer-row .mini{width:40px;height:40px}
+.viewer-row b{flex:1}
+.viewer-row span{color:var(--muted);font-size:.85rem}
 
 /* calls list */
 .callrow{display:flex;gap:12px;align-items:center;padding:10px;border-radius:16px;background:none;border:0;width:100%;text-align:left}
@@ -375,6 +381,7 @@ button{cursor:pointer}
       <button class="story-close" id="storyClose" aria-label="Close">×</button>
     </div>
     <div class="story-body" id="storyBody"></div>
+    <button class="status-views" id="storyViews" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span id="storyViewsCount">0</span></button>
     <button class="status-del" id="storyDel" hidden>Delete this status</button>
   </div>
   <div class="toast" id="toast" role="status"></div>
@@ -1113,9 +1120,14 @@ function statusRowHTML(group, mine) {
   const u = group[0];
   const person = { id: u.user_id, name: u.name, photo_url: u.user_photo };
   const when = timeText(group[0].created_at);
+  let extra = `${group.length} update${group.length>1?"s":""} · ${when}`;
+  if (mine) {
+    const totalViews = group.reduce((sum, x) => sum + (Number(x.view_count) || 0), 0);
+    extra += ` · ${totalViews} view${totalViews===1?"":"s"}`;
+  }
   return `<button class="statusrow" data-uid="${u.user_id}">
     <div class="status-ring"><div class="mini">${avatar(person)}</div></div>
-    <div class="t"><b>${mine ? "My status" : esc(u.name)}</b><span>${group.length} update${group.length>1?"s":""} · ${when}</span></div>
+    <div class="t"><b>${mine ? "My status" : esc(u.name)}</b><span>${esc(extra)}</span></div>
   </button>`;
 }
 
@@ -1144,6 +1156,15 @@ function renderStory() {
     try { await api("/api/status/" + item.id, { method: "DELETE" }); } catch (e) {}
     closeStory(); loadStatuses();
   };
+  // apna status: viewers button; doosron ka: view record karo
+  if (item.mine) {
+    $("#storyViews").hidden = false;
+    $("#storyViewsCount").textContent = item.view_count || 0;
+    $("#storyViews").onclick = () => showViewers(item.id);
+  } else {
+    $("#storyViews").hidden = true;
+    api("/api/status/" + item.id + "/view", { method: "POST" }).catch(() => {});
+  }
   // auto-advance
   clearTimeout(storyState.timer);
   const bar = $("#storyBars").children[idx].querySelector("i");
@@ -1156,6 +1177,18 @@ function nextStory() {
   if (storyState.idx < storyState.group.length - 1) { storyState.idx++; renderStory(); }
   else closeStory();
 }
+async function showViewers(statusId) {
+  clearTimeout(storyState && storyState.timer);
+  try {
+    const viewers = await api("/api/status/" + statusId + "/viewers");
+    const body = viewers.length
+      ? viewers.map(v => `<div class="viewer-row"><div class="mini">${avatar(v)}</div><b>${esc(v.name)}</b><span>${timeText(v.created_at)}</span></div>`).join("")
+      : `<p class="muted">No views yet.</p>`;
+    openSheet(`<h3 id="sheetTitle">Viewed by ${viewers.length}</h3>${body}<button class="cancel" id="vwClose">Close</button>`);
+    $("#vwClose").onclick = () => { closeSheet(); if (storyState) storyState.timer = setTimeout(nextStory, 4000); };
+  } catch (err) { toast(err.message); }
+}
+
 function closeStory() {
   if (storyState) clearTimeout(storyState.timer);
   storyState = null;

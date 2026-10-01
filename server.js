@@ -1,4 +1,4 @@
-// saath-v18-status
+// saath-v19-statusviews
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -354,7 +354,10 @@ app.get("/api/status", authCheck, async (req, res) => {
     const r = await db.query(
       `SELECT s.id, s.user_id, s.text, s.photo_url, s.created_at,
               u.name, u.photo_url AS user_photo,
-              (s.user_id = $1) AS mine
+              (s.user_id = $1) AS mine,
+              CASE WHEN s.user_id = $1
+                   THEN (SELECT COUNT(*) FROM status_views v WHERE v.status_id = s.id)
+                   ELSE 0 END AS view_count
        FROM statuses s
        JOIN users u ON u.id = s.user_id
        WHERE s.created_at > NOW() - INTERVAL '24 hours'
@@ -388,6 +391,43 @@ app.delete("/api/status/:id", authCheck, async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Could not remove status" });
+  }
+});
+
+// Status dekha: ek view record karo (apne hi status par view nahi ginte)
+app.post("/api/status/:id/view", authCheck, async (req, res) => {
+  const statusId = Number(req.params.id);
+  try {
+    const own = await db.query("SELECT 1 FROM statuses WHERE id = $1 AND user_id = $2", [statusId, req.user.id]);
+    if (own.rowCount === 0) {
+      await db.query(
+        "INSERT INTO status_views (status_id, viewer) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        [statusId, req.user.id]
+      );
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.json({ ok: false });
+  }
+});
+
+// Mere status ko kisne dekha (sirf status ka maalik dekh sakta hai)
+app.get("/api/status/:id/viewers", authCheck, async (req, res) => {
+  const statusId = Number(req.params.id);
+  try {
+    const own = await db.query("SELECT 1 FROM statuses WHERE id = $1 AND user_id = $2", [statusId, req.user.id]);
+    if (own.rowCount === 0) return res.status(403).json({ error: "Not your status" });
+    const r = await db.query(
+      `SELECT u.id, u.name, u.photo_url, v.created_at
+       FROM status_views v JOIN users u ON u.id = v.viewer
+       WHERE v.status_id = $1 ORDER BY v.created_at DESC`,
+      [statusId]
+    );
+    res.json(r.rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Could not load viewers" });
   }
 });
 

@@ -1,4 +1,4 @@
-// saath-v19-statusviews
+// saath-v21-autotables
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -70,12 +70,19 @@ const DEMO_REPLIES = [
 ];
 
 // ---------- CLOUDINARY (photo storage) ----------
-const photosEnabled = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
-if (photosEnabled) {
+// Cloudinary 2 tareeke se set ho sakta hai: ek CLOUDINARY_URL se, ya teen alag keys se.
+const hasCloudinaryUrl = !!process.env.CLOUDINARY_URL;
+const hasCloudinaryKeys = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+const photosEnabled = hasCloudinaryUrl || hasCloudinaryKeys;
+if (hasCloudinaryUrl) {
+  // CLOUDINARY_URL ko cloudinary library khud padh leti hai, bas secure on kar do
+  cloudinary.config({ secure: true });
+} else if (hasCloudinaryKeys) {
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true
   });
 }
 // Photo memory mein lo, max 5 MB, sirf images
@@ -870,6 +877,31 @@ async function setupDatabase() {
       code_hash TEXT NOT NULL,
       expires_at TIMESTAMP NOT NULL,
       attempts INT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS statuses (
+      id SERIAL PRIMARY KEY,
+      user_id INT REFERENCES users(id) ON DELETE CASCADE,
+      text TEXT,
+      photo_url TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS status_views (
+      status_id INT REFERENCES statuses(id) ON DELETE CASCADE,
+      viewer INT REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      PRIMARY KEY (status_id, viewer)
+    );
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_url TEXT;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen TIMESTAMP;
+    ALTER TABLE messages ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMP;
+    ALTER TABLE messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMP;
+    CREATE TABLE IF NOT EXISTS calls (
+      id SERIAL PRIMARY KEY,
+      caller INT REFERENCES users(id) ON DELETE CASCADE,
+      callee INT REFERENCES users(id) ON DELETE CASCADE,
+      status VARCHAR(12) NOT NULL,
+      duration INT DEFAULT 0,
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);

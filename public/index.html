@@ -4,7 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saath</title>
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews -->
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Saath">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -214,7 +219,10 @@ button{cursor:pointer}
 <main class="app">
   <header class="topbar">
     <div class="logo">saath<span></span></div>
-    <div class="hello" id="hello"></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="installBtn" hidden style="background:var(--plum);color:#fff;border:0;border-radius:999px;padding:6px 14px;font-weight:600;font-size:.9rem">Install app</button>
+      <div class="hello" id="hello"></div>
+    </div>
   </header>
 
   <!-- LOGIN / SIGN UP -->
@@ -1366,6 +1374,38 @@ function startApp() {
   loadMyProfile();
   askNotifyPermission();
 }
+
+// ---------- PWA: install button + service worker ----------
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
+
+let deferredInstall = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstall = e;
+  const b = document.getElementById("installBtn");
+  if (b) b.hidden = false;
+});
+
+document.getElementById("installBtn").onclick = async () => {
+  if (!deferredInstall) {
+    toast("Open the browser menu and tap 'Add to Home screen'");
+    return;
+  }
+  deferredInstall.prompt();
+  const choice = await deferredInstall.userChoice;
+  deferredInstall = null;
+  document.getElementById("installBtn").hidden = true;
+  if (choice && choice.outcome === "accepted") toast("Installing Saath...");
+};
+
+window.addEventListener("appinstalled", () => {
+  document.getElementById("installBtn").hidden = true;
+  toast("Saath added to your home screen!");
+});
 
 if (token) startApp(); else showScreen("auth");
 </script>

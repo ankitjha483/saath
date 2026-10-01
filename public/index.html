@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saath">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -167,7 +167,7 @@ button{cursor:pointer}
 .searchbar input{width:100%;padding:11px 40px 11px 38px;border-radius:999px;border:1px solid var(--line);background:var(--bg);font:inherit}
 .searchbar .sicon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);width:18px;height:18px}
 .searchbar .sclear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--chip);border:0;width:24px;height:24px;border-radius:50%;cursor:pointer;color:var(--muted)}
-.searchResults{position:absolute;left:16px;right:16px;top:52px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 40px -20px rgba(15,94,87,.4);max-height:60vh;overflow-y:auto;z-index:6}
+.searchResults{position:absolute;left:0;right:0;top:46px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 40px -20px rgba(15,94,87,.4);max-height:60vh;overflow-y:auto;z-index:6}
 .searchResults[hidden]{display:none}
 .sresult{display:flex;gap:12px;align-items:center;padding:10px 12px;border:0;background:none;width:100%;text-align:left;cursor:pointer;border-bottom:1px solid var(--line)}
 .sresult:hover{background:var(--chip)}
@@ -256,7 +256,7 @@ button{cursor:pointer}
   <section class="screen" id="screen-auth">
     <div class="auth">
       <h1>Meet. Talk.</h1>
-      <p class="sub">On Saath, conversation comes first, photos later.</p>
+      <p class="sub">On Saath, conversation comes first. Adding a photo is optional.</p>
       <div class="seg" role="group">
         <button id="tabLogin" aria-pressed="true">Login</button>
         <button id="tabSignup" aria-pressed="false">Sign up</button>
@@ -306,12 +306,6 @@ button{cursor:pointer}
 
   <!-- DISCOVER -->
   <section class="screen" id="screen-discover">
-      <div class="searchbar">
-        <svg class="sicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3" stroke-linecap="round"/></svg>
-        <input id="searchInput" type="search" placeholder="Search people by name or city" autocomplete="off">
-        <button class="sclear" id="searchClear" hidden aria-label="Clear">×</button>
-        <div class="searchResults" id="searchResults" hidden></div>
-      </div>
       <button id="inviteBtn3" style="margin:8px 16px 0;background:var(--chip);border:0;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;text-align:left;cursor:pointer">
         <span style="width:34px;height:34px;border-radius:50%;background:var(--plum);color:#fff;display:grid;place-items:center;flex:none">✉</span>
         <span style="flex:1"><b style="display:block;font-size:.95rem">Invite friends</b><span class="muted" style="font-size:.82rem">Share Saath with people you know</span></span>
@@ -327,6 +321,12 @@ button{cursor:pointer}
   <section class="screen" id="screen-matches">
     <div class="scroll">
       <h2 class="section-title">Your matches</h2>
+      <div class="searchbar" style="margin:0 0 12px">
+        <svg class="sicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3" stroke-linecap="round"/></svg>
+        <input id="searchInput" type="search" placeholder="Search your matches" autocomplete="off">
+        <button class="sclear" id="searchClear" hidden aria-label="Clear">×</button>
+        <div class="searchResults" id="searchResults" hidden></div>
+      </div>
       <div id="matchList"></div>
     </div>
   </section>
@@ -385,6 +385,7 @@ button{cursor:pointer}
         <div class="photo-big" id="myPhoto"></div>
         <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" hidden>
         <button class="uploadbtn" id="uploadPhotoBtn">Add / change photo</button>
+        <div class="muted" style="font-size:.82rem;text-align:center;max-width:34ch">Your photo is shown on your profile to people you’re matched with or discovering. You can remove it anytime.</div>
       </div>
       <p id="profileInfo" class="muted"></p>
       <button class="uploadbtn" id="editToggleBtn" style="width:100%">Edit profile</button>
@@ -691,7 +692,16 @@ function renderDeck() {
   const deck = $("#deck");
   deck.innerHTML = "";
   if (!profiles.length) {
-    deck.innerHTML = `<div class="empty"><h3>You’ve seen everyone</h3><p>New people will show up here as they join.</p></div>`;
+    deck.innerHTML = `<div class="empty"><h3>You’ve seen everyone</h3><p>New people join every day. You can also take another look at people you passed.</p><button class="primary" id="undoPassBtn" style="width:auto;margin-top:6px">See passed people again</button></div>`;
+    const ub = document.getElementById("undoPassBtn");
+    if (ub) ub.onclick = async () => {
+      ub.disabled = true; ub.textContent = "Bringing them back...";
+      try {
+        const d = await api("/api/undo-passes", { method: "POST" });
+        if (d.count > 0) { toast(d.message); loadProfiles(); }
+        else { toast("No passed people to bring back"); ub.disabled = false; ub.textContent = "See passed people again"; }
+      } catch (e) { toast(e.message); ub.disabled = false; ub.textContent = "See passed people again"; }
+    };
     return;
   }
   profiles.slice(-3).forEach((p, i, arr) => {

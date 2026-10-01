@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saath">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -290,10 +290,6 @@ button{cursor:pointer}
   <section class="screen" id="screen-matches">
     <div class="scroll">
       <h2 class="section-title">Your matches</h2>
-      <button class="status-add" id="inviteBtn2" style="margin-bottom:14px">
-        <div class="plus" style="font-size:1.2rem">✉</div>
-        <div><b>Invite friends</b><div class="muted" style="font-size:.9rem">Share Saath and find more people</div></div>
-      </button>
       <div id="matchList"></div>
     </div>
   </section>
@@ -354,7 +350,8 @@ button{cursor:pointer}
         <button class="uploadbtn" id="uploadPhotoBtn">Add / change photo</button>
       </div>
       <p id="profileInfo" class="muted"></p>
-      <form id="editForm">
+      <button class="uploadbtn" id="editToggleBtn" style="width:100%">Edit profile</button>
+      <form id="editForm" hidden style="margin-top:14px">
         <div class="field"><label for="eName">Name</label><input id="eName" maxlength="50"></div>
         <div class="field"><label for="eCity">City</label><input id="eCity" maxlength="50" placeholder="e.g. Gurugram"></div>
         <div class="field"><label for="eJob">Work / studies</label><input id="eJob" maxlength="100" placeholder="e.g. Product analyst"></div>
@@ -374,7 +371,7 @@ button{cursor:pointer}
       <button class="uploadbtn" id="inviteBtn" style="width:100%;margin-top:6px">Invite friends to Saath</button>
       <div class="note" style="margin-top:20px">If someone bothers you, use the ⋮ button at the top of a chat to block or report them.</div>
       <button class="ghostbtn" id="logoutBtn" style="margin-top:12px">Logout</button>
-      <button class="dangerbtn" id="deleteBtn">Delete my account</button>
+      <button id="deleteBtn" style="background:none;border:0;color:var(--rose);font-size:.85rem;text-decoration:underline;cursor:pointer;display:block;margin:14px auto 0">Delete my account</button>
       <div class="privacy-note">
         <b>Your privacy:</b> Saath stores only what you provide (name, email, photo, and chats) to run the app. We never show your email to other users, and your password is stored in an unreadable, hashed form. Deleting your account removes all of your data permanently.
       </div>
@@ -1397,6 +1394,12 @@ async function loadMyProfile() {
   } catch (e) {}
 }
 
+$("#editToggleBtn").onclick = () => {
+  $("#editForm").hidden = false;
+  $("#editToggleBtn").hidden = true;
+  $("#eName").focus();
+};
+
 document.addEventListener("submit", async e => {
   if (e.target.id !== "editForm") return;
   e.preventDefault();
@@ -1410,9 +1413,11 @@ document.addEventListener("submit", async e => {
   };
   try {
     myProfile = await api("/api/me", { method: "PUT", body: JSON.stringify(body) });
-    $("#editMsg").textContent = "Saved!";
+    $("#editMsg").textContent = "";
     toast("Profile updated");
     $("#hello").textContent = myProfile.name ? "Hi, " + myProfile.name : "";
+    $("#editForm").hidden = true;
+    $("#editToggleBtn").hidden = false;
   } catch (err) {
     $("#editMsg").textContent = err.message;
   }

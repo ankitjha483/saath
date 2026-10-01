@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saath</title>
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -273,9 +273,26 @@ button{cursor:pointer}
         <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" hidden>
         <button class="uploadbtn" id="uploadPhotoBtn">Add / change photo</button>
       </div>
-      <p id="profileInfo"></p>
-      <div class="note">If someone bothers you, use the ⋮ button at the top of the chat to block or report them.</div>
-      <button class="ghostbtn" id="logoutBtn">Logout</button>
+      <p id="profileInfo" class="muted"></p>
+      <form id="editForm">
+        <div class="field"><label for="eName">Name</label><input id="eName" maxlength="50"></div>
+        <div class="field"><label for="eCity">City</label><input id="eCity" maxlength="50" placeholder="e.g. Gurugram"></div>
+        <div class="field"><label for="eJob">Work / studies</label><input id="eJob" maxlength="100" placeholder="e.g. Product analyst"></div>
+        <div class="field"><label for="eLang">Languages</label><input id="eLang" maxlength="100" placeholder="e.g. Hindi, English"></div>
+        <div class="field"><label for="eIntent">Looking for</label>
+          <select id="eIntent">
+            <option value="">Prefer not to say</option>
+            <option>Long-term relationship</option>
+            <option>Marriage</option>
+            <option>Figuring it out</option>
+          </select></div>
+        <div class="field"><label for="eQ">Prompt (a question about you)</label><input id="eQ" maxlength="100" placeholder="e.g. A perfect Sunday looks like"></div>
+        <div class="field"><label for="eA">Your answer</label><input id="eA" maxlength="200" placeholder="e.g. Chai, a good book, and a long walk"></div>
+        <p class="okmsg" id="editMsg"></p>
+        <button class="primary" type="submit" id="saveProfileBtn" style="width:100%">Save profile</button>
+      </form>
+      <div class="note" style="margin-top:20px">If someone bothers you, use the ⋮ button at the top of a chat to block or report them.</div>
+      <button class="ghostbtn" id="logoutBtn" style="margin-top:12px">Logout</button>
     </div>
   </section>
 
@@ -1044,12 +1061,45 @@ function notify(title, body) {
 // ================== START ==================
 let myProfile = null;
 
+function fillEditForm(p) {
+  $("#eName").value = p.name || "";
+  $("#eCity").value = p.city || "";
+  $("#eJob").value = p.job || "";
+  $("#eLang").value = p.languages || "";
+  $("#eIntent").value = p.intent || "";
+  $("#eQ").value = p.prompt_question || "";
+  $("#eA").value = p.prompt_answer || "";
+}
+
 async function loadMyProfile() {
   try {
     myProfile = await api("/api/me");
     $("#myPhoto").innerHTML = avatar(myProfile);
+    fillEditForm(myProfile);
   } catch (e) {}
 }
+
+document.addEventListener("submit", async e => {
+  if (e.target.id !== "editForm") return;
+  e.preventDefault();
+  $("#editMsg").textContent = "";
+  const btn = $("#saveProfileBtn");
+  btn.disabled = true; btn.textContent = "Saving...";
+  const body = {
+    name: $("#eName").value, city: $("#eCity").value, job: $("#eJob").value,
+    languages: $("#eLang").value, intent: $("#eIntent").value,
+    prompt_question: $("#eQ").value, prompt_answer: $("#eA").value
+  };
+  try {
+    myProfile = await api("/api/me", { method: "PUT", body: JSON.stringify(body) });
+    $("#editMsg").textContent = "Saved!";
+    toast("Profile updated");
+    $("#hello").textContent = myProfile.name ? "Hi, " + myProfile.name : "";
+  } catch (err) {
+    $("#editMsg").textContent = err.message;
+  }
+  btn.disabled = false; btn.textContent = "Save profile";
+});
 
 $("#uploadPhotoBtn").onclick = () => $("#photoInput").click();
 $("#photoInput").onchange = async () => {

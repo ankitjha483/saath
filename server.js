@@ -1,4 +1,4 @@
-// saath-v15-presence
+// saath-v16-editprofile
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -242,6 +242,46 @@ app.get("/api/me", authCheck, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Could not load your profile" });
+  }
+});
+
+// ---------- UPDATE MY PROFILE ----------
+app.put("/api/me", authCheck, async (req, res) => {
+  const { name, city, job, languages, intent, prompt_question, prompt_answer } = req.body;
+  if (name !== undefined && (!name.trim() || name.trim().length > 50)) {
+    return res.status(400).json({ error: "Name must be 1 to 50 characters" });
+  }
+  const allowedIntents = ["Long-term relationship", "Marriage", "Figuring it out"];
+  if (intent !== undefined && intent && !allowedIntents.includes(intent)) {
+    return res.status(400).json({ error: "Please choose a valid option for what you're looking for" });
+  }
+  try {
+    const r = await db.query(
+      `UPDATE users SET
+         name = COALESCE($1, name),
+         city = COALESCE($2, city),
+         job = COALESCE($3, job),
+         languages = COALESCE($4, languages),
+         intent = COALESCE($5, intent),
+         prompt_question = COALESCE($6, prompt_question),
+         prompt_answer = COALESCE($7, prompt_answer)
+       WHERE id = $8
+       RETURNING id, name, email, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url`,
+      [
+        name !== undefined ? name.trim() : null,
+        city !== undefined ? city.trim() : null,
+        job !== undefined ? job.trim() : null,
+        languages !== undefined ? languages.trim() : null,
+        intent !== undefined ? (intent || null) : null,
+        prompt_question !== undefined ? prompt_question.trim() : null,
+        prompt_answer !== undefined ? prompt_answer.trim() : null,
+        req.user.id
+      ]
+    );
+    res.json(r.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not save your profile, please try again" });
   }
 });
 

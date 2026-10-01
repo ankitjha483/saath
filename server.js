@@ -1,4 +1,4 @@
-// saath-v29-selfping
+// saath-v31-feedbackfix
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -615,6 +615,33 @@ app.get("/api/profiles", authCheck, async (req, res) => {
   }
 });
 
+// ---------- SEARCH PEOPLE ----------
+// Platform ke saare log (khud ko aur blocked ko chhod kar). Agar galti se pass kiya ho to yahan se dobara like kar sakte ho.
+app.get("/api/search", authCheck, async (req, res) => {
+  const q = String(req.query.q || "").trim();
+  try {
+    const result = await db.query(
+      `SELECT u.id, u.name, u.age, u.city, u.photo_url
+       FROM swipes a
+       JOIN swipes b ON a.from_user = b.to_user AND a.to_user = b.from_user
+       JOIN users u ON u.id = a.to_user
+       WHERE a.from_user = $1 AND a.action='like' AND b.action='like'
+         AND ($2 = '' OR u.name ILIKE '%' || $2 || '%' OR u.city ILIKE '%' || $2 || '%')
+         AND NOT EXISTS (
+           SELECT 1 FROM blocks
+           WHERE (blocker=$1 AND blocked=u.id) OR (blocker=u.id AND blocked=$1)
+         )
+       ORDER BY u.name
+       LIMIT 50`,
+      [req.user.id, q]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not search" });
+  }
+});
+
 // ---------- SWIPE ----------
 app.post("/api/swipe", authCheck, async (req, res) => {
   const { to_user, action } = req.body;
@@ -645,6 +672,18 @@ app.post("/api/swipe", authCheck, async (req, res) => {
     }
     console.error(err);
     res.status(500).json({ error: "Kuch gadbad ho gayi, dobara try karo" });
+  }
+});
+
+// ---------- PASSED LOGON KO WAPAS LAAO ----------
+// Jinhe pass kiya tha, unke swipe hata do taaki wo Discover mein wapas aayein.
+app.post("/api/undo-passes", authCheck, async (req, res) => {
+  try {
+    const r = await db.query("DELETE FROM swipes WHERE from_user = $1 AND action = 'pass'", [req.user.id]);
+    res.json({ message: "Brought back " + r.rowCount + " people", count: r.rowCount });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not bring back people" });
   }
 });
 

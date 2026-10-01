@@ -1,4 +1,4 @@
-// saath-v27-push
+// saath-v28-pushtest
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -359,6 +359,28 @@ app.post("/api/push/subscribe", authCheck, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Could not save subscription" });
+  }
+});
+
+// ---------- PUSH TEST (apne aap ko ek push bhejo, debugging ke liye) ----------
+app.post("/api/push/test", authCheck, async (req, res) => {
+  if (!pushEnabled) return res.json({ ok: false, reason: "pushEnabled is false (VAPID keys missing on server)" });
+  try {
+    const subs = await db.query("SELECT endpoint, p256dh, auth FROM push_subs WHERE user_id = $1", [req.user.id]);
+    if (subs.rowCount === 0) return res.json({ ok: false, reason: "No subscription saved for your user id " + req.user.id });
+    const results = [];
+    for (const srow of subs.rows) {
+      const sub = { endpoint: srow.endpoint, keys: { p256dh: srow.p256dh, auth: srow.auth } };
+      try {
+        await webpush.sendNotification(sub, JSON.stringify({ title: "Saath test", body: "If you see this, push works!", url: "/" }));
+        results.push({ endpoint: srow.endpoint.slice(0, 40), status: "SENT" });
+      } catch (err) {
+        results.push({ endpoint: srow.endpoint.slice(0, 40), status: "FAILED", code: err.statusCode, message: String(err.message || err).slice(0, 200) });
+      }
+    }
+    res.json({ ok: true, count: subs.rowCount, results });
+  } catch (err) {
+    res.json({ ok: false, reason: String(err.message || err).slice(0, 200) });
   }
 });
 

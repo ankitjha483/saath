@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saath</title>
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -113,6 +113,8 @@ button{cursor:pointer}
 .composer .primary{width:auto}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:6px;vertical-align:middle}
 .dot.on{background:var(--leaf)}
+.onlinedot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--leaf);margin-right:6px;vertical-align:middle}
+.typing-row{color:var(--leaf);font-style:italic}
 
 /* calls list */
 .callrow{display:flex;gap:12px;align-items:center;padding:10px;border-radius:16px;background:none;border:0;width:100%;text-align:left}
@@ -567,7 +569,15 @@ async function loadMatches() {
     const matches = await api("/api/matches");
     knownMatches = matches;
     if (!matches.length) { list.innerHTML = `<p class="muted">No matches yet. Like a few people in Discover.</p>`; return; }
-    list.innerHTML = matches.map(m => `<button class="matchrow" data-name="${esc(m.name)}"><div class="mini">${avatar(m)}</div><div><b>${esc(m.name)}, ${esc(m.age)}</b><div class="muted">${esc(m.city || "")}</div></div></button>`).join("");
+    list.innerHTML = matches.map(m => `<button class="matchrow" data-name="${esc(m.name)}"><div class="mini">${avatar(m)}</div><div class="t"><b>${esc(m.name)}, ${esc(m.age)}</b><span class="muted" id="pres-${m.id}">${esc(m.city || "")}</span></div></button>`).join("");
+    // har match ka online status poochho
+    matches.forEach(m => {
+      if (!socket || !socket.connected) return;
+      socket.emit("presence:check", { user_id: m.id }, res => {
+        const el = document.getElementById("pres-" + m.id);
+        if (el && res && res.online) el.innerHTML = '<span class="onlinedot"></span>Online';
+      });
+    });
     list.querySelectorAll(".matchrow").forEach((r, i) => r.onclick = () => openChat(matches[i]));
   } catch (err) { list.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
 }
@@ -583,6 +593,15 @@ function connectSocket() {
   socket.on("disconnect", () => updateStatus());
   socket.on("connect_error", () => updateStatus());
   socket.on("calls_updated", () => { if (document.querySelector("#screen-calls.active")) loadCalls(); });
+  socket.on("presence", ({ user_id, online, last_seen }) => {
+    if (activeChat && activeChat.id === user_id) setChatPresence(online, last_seen);
+    if (document.querySelector("#screen-matches.active")) loadMatches();
+  });
+  socket.on("typing", ({ from_user, typing }) => {
+    if (activeChat && activeChat.id === from_user) {
+      if (typing) showTyping(); else refreshPresence(from_user);
+    }
+  });
   socket.on("call:incoming", onIncomingCall);
   socket.on("call:answered", onCallAnswered);
   socket.on("call:ice", onRemoteIce);
@@ -647,7 +666,7 @@ async function openChat(person) {
   activeChat = person;
   $("#chatAvatar").innerHTML = avatar(person);
   $("#chatName").textContent = person.name;
-  updateStatus();
+  refreshPresence(person.id);
   showScreen("chat");
   activeChat = person;
   $("#msgs").innerHTML = `<div class="sysnote">You matched with ${esc(person.name)}. Be kind.</div>`;
@@ -660,6 +679,12 @@ async function openChat(person) {
 
 $("#backBtn").onclick = () => showScreen("matches");
 
+$("#msgInput").addEventListener("input", () => {
+  sendTyping(true);
+  clearTimeout(typingSendTimer);
+  typingSendTimer = setTimeout(() => sendTyping(false), 2000);
+});
+
 $("#composer").onsubmit = e => {
   e.preventDefault();
   const input = $("#msgInput");
@@ -667,6 +692,8 @@ $("#composer").onsubmit = e => {
   if (!text || !activeChat) return;
   if (!socket || !socket.connected) { toast("Chat not connected yet, one moment"); return; }
   input.value = "";
+  clearTimeout(typingSendTimer);
+  sendTyping(false);
   socket.emit("send_message", { to_user: activeChat.id, text }, reply => {
     if (reply && reply.ok) addMsg(reply.message);
     else { toast((reply && reply.error) || "Message not sent"); input.value = text; }
@@ -945,6 +972,48 @@ async function loadCalls() {
       startCall();
     });
   } catch (err) { list.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+}
+
+// ================== PRESENCE + TYPING ==================
+function lastSeenText(iso) {
+  if (!iso) return "Offline";
+  try {
+    const d = new Date(iso), now = new Date();
+    const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (d.toDateString() === now.toDateString()) return "Last seen today at " + time;
+    const y = new Date(now); y.setDate(now.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return "Last seen yesterday at " + time;
+    return "Last seen " + d.toLocaleDateString([], { day: "numeric", month: "short" });
+  } catch (e) { return "Offline"; }
+}
+
+function setChatPresence(online, lastSeen) {
+  const el = $("#chatStatus");
+  if (!el) return;
+  if (online) el.innerHTML = '<span class="onlinedot"></span>Online';
+  else el.textContent = lastSeenText(lastSeen);
+}
+
+function refreshPresence(userId) {
+  if (!socket || !socket.connected) { setChatPresence(false, null); return; }
+  socket.emit("presence:check", { user_id: userId }, res => {
+    if (!activeChat || activeChat.id !== userId) return;
+    setChatPresence(res && res.online, res && res.last_seen);
+  });
+}
+
+let typingSendTimer = null;
+function sendTyping(on) {
+  if (!socket || !socket.connected || !activeChat) return;
+  socket.emit("typing", { to_user: activeChat.id, typing: on });
+}
+let typingClearTimer = null;
+function showTyping() {
+  const el = $("#chatStatus");
+  if (!el) return;
+  el.innerHTML = '<span class="typing-row">typing...</span>';
+  clearTimeout(typingClearTimer);
+  typingClearTimer = setTimeout(() => { if (activeChat) refreshPresence(activeChat.id); }, 3000);
 }
 
 // ================== NOTIFICATIONS ==================

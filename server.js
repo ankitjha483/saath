@@ -1,4 +1,4 @@
-// saath-v14-notify
+// saath-v15-presence
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -325,7 +325,7 @@ app.post("/api/swipe", authCheck, async (req, res) => {
 app.get("/api/matches", authCheck, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT u.id, u.name, u.age, u.city, u.photo_url,
+      `SELECT u.id, u.name, u.age, u.city, u.photo_url, u.last_seen,
               (SELECT MAX(created_at) FROM messages m
                WHERE (m.from_user = $1 AND m.to_user = u.id) OR (m.from_user = u.id AND m.to_user = $1)
               ) AS last_msg_at
@@ -481,9 +481,53 @@ io.use((socket, next) => {
   }
 });
 
-io.on("connection", (socket) => {
+// Kisi user ke saare matches ko ek event bhejo (online/offline/typing)
+async function notifyMatches(userId, event, payload) {
+  try {
+    const r = await db.query(
+      `SELECT u.id FROM swipes a
+       JOIN swipes b ON a.from_user = b.to_user AND a.to_user = b.from_user
+       JOIN users u ON u.id = a.to_user
+       WHERE a.from_user = $1 AND a.action='like' AND b.action='like'`,
+      [userId]
+    );
+    r.rows.forEach(row => io.to("user:" + row.id).emit(event, payload));
+  } catch (err) { console.error(err); }
+}
+
+io.on("connection", async (socket) => {
   // Har user ka apna "kamra", taaki message sirf usi tak jaye
   socket.join("user:" + socket.user.id);
+
+  // Online ho gaye: apne matches ko batao
+  notifyMatches(socket.user.id, "presence", { user_id: socket.user.id, online: true });
+
+  socket.on("disconnect", async () => {
+    // Agar isi user ki koi aur tab/phone abhi bhi khuli hai, to offline mat dikhao
+    const still = await io.in("user:" + socket.user.id).fetchSockets();
+    if (still.length > 0) return;
+    const now = new Date();
+    try { await db.query("UPDATE users SET last_seen = $1 WHERE id = $2", [now, socket.user.id]); } catch (e) {}
+    notifyMatches(socket.user.id, "presence", { user_id: socket.user.id, online: false, last_seen: now });
+  });
+
+  // Doosra kaunse log abhi online hain, ye poochne ke liye
+  socket.on("presence:check", async ({ user_id } = {}, reply = () => {}) => {
+    try {
+      const sockets = await io.in("user:" + user_id).fetchSockets();
+      if (sockets.length > 0) return reply({ online: true });
+      const r = await db.query("SELECT last_seen FROM users WHERE id = $1", [user_id]);
+      reply({ online: false, last_seen: r.rows[0] ? r.rows[0].last_seen : null });
+    } catch (e) { reply({ online: false }); }
+  });
+
+  // Typing indicator
+  socket.on("typing", async ({ to_user, typing } = {}) => {
+    try {
+      if (!(await isMatch(socket.user.id, to_user))) return;
+      io.to("user:" + to_user).emit("typing", { from_user: socket.user.id, typing: !!typing });
+    } catch (e) {}
+  });
 
   // ---------- VOICE CALL (WebRTC signaling) ----------
   // Awaaz seedha dono phones ke beech jaati hai. Server sirf "milane" ka kaam karta hai.

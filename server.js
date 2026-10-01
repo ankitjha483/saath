@@ -1,4 +1,4 @@
-// saath-v17-delete
+// saath-v18-status
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -318,6 +318,77 @@ app.post("/api/photo", authCheck, (req, res) => {
       res.status(500).json({ error: "Photo upload failed, please try again" });
     }
   });
+});
+
+// ---------- STATUS / STORY ----------
+// Apna status daalo (text ya photo). Photo ke liye Cloudinary wahi reuse.
+app.post("/api/status", authCheck, (req, res) => {
+  upload.single("photo")(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    const text = (req.body.text || "").trim();
+    if (!text && !req.file) return res.status(400).json({ error: "Add some text or a photo" });
+    if (text.length > 300) return res.status(400).json({ error: "Status text is too long" });
+    try {
+      let photoUrl = null;
+      if (req.file) {
+        if (!photosEnabled) return res.status(503).json({ error: "Photo status is not set up on the server yet" });
+        const dataUri = "data:" + req.file.mimetype + ";base64," + req.file.buffer.toString("base64");
+        const up = await cloudinary.uploader.upload(dataUri, { folder: "saath/status", transformation: [{ width: 1080, crop: "limit" }, { quality: "auto" }] });
+        photoUrl = up.secure_url;
+      }
+      const r = await db.query(
+        "INSERT INTO statuses (user_id, text, photo_url) VALUES ($1, $2, $3) RETURNING id, text, photo_url, created_at",
+        [req.user.id, text || null, photoUrl]
+      );
+      res.status(201).json(r.rows[0]);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Could not post your status, please try again" });
+    }
+  });
+});
+
+// Apne aur matches ke status dekho (sirf pichhle 24 ghante ke)
+app.get("/api/status", authCheck, async (req, res) => {
+  try {
+    const r = await db.query(
+      `SELECT s.id, s.user_id, s.text, s.photo_url, s.created_at,
+              u.name, u.photo_url AS user_photo,
+              (s.user_id = $1) AS mine
+       FROM statuses s
+       JOIN users u ON u.id = s.user_id
+       WHERE s.created_at > NOW() - INTERVAL '24 hours'
+         AND (
+           s.user_id = $1
+           OR s.user_id IN (
+             SELECT a.to_user FROM swipes a
+             JOIN swipes b ON a.from_user = b.to_user AND a.to_user = b.from_user
+             WHERE a.from_user = $1 AND a.action='like' AND b.action='like'
+           )
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM blocks
+           WHERE (blocker=$1 AND blocked=s.user_id) OR (blocker=s.user_id AND blocked=$1)
+         )
+       ORDER BY mine DESC, s.created_at DESC`,
+      [req.user.id]
+    );
+    res.json(r.rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Could not load statuses" });
+  }
+});
+
+// Apna status hatao
+app.delete("/api/status/:id", authCheck, async (req, res) => {
+  try {
+    await db.query("DELETE FROM statuses WHERE id = $1 AND user_id = $2", [Number(req.params.id), req.user.id]);
+    res.json({ message: "Status removed" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Could not remove status" });
+  }
 });
 
 // ---------- PROFILES ----------

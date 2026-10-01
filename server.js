@@ -1,4 +1,4 @@
-// saath-v21-autotables
+// saath-v26-forgot
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -235,6 +235,79 @@ app.post("/api/login", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Kuch gadbad ho gayi, dobara try karo" });
+  }
+});
+
+// ---------- FORGOT PASSWORD: send reset code ----------
+app.post("/api/forgot-password", async (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: "Please enter a valid email" });
+  }
+  try {
+    const exists = await db.query("SELECT 1 FROM users WHERE email = $1", [email]);
+    // Security: chahe email ho ya na ho, same message. Taaki koi email guess na kar sake.
+    if (exists.rowCount === 0) {
+      return res.json({ message: "If that email is registered, a reset code has been sent." });
+    }
+    const recent = await db.query(
+      "SELECT 1 FROM email_otps WHERE email = $1 AND created_at > NOW() - INTERVAL '60 seconds'",
+      [email]
+    );
+    if (recent.rowCount > 0) {
+      return res.status(429).json({ error: "Code already sent. Try again in a minute." });
+    }
+    const code = String(crypto.randomInt(100000, 1000000));
+    const codeHash = await bcrypt.hash(code, 10);
+    await db.query(
+      `INSERT INTO email_otps (email, code_hash, expires_at, attempts, created_at)
+       VALUES ($1, $2, NOW() + INTERVAL '10 minutes', 0, NOW())
+       ON CONFLICT (email) DO UPDATE
+       SET code_hash = EXCLUDED.code_hash, expires_at = EXCLUDED.expires_at, attempts = 0, created_at = NOW()`,
+      [email, codeHash]
+    );
+    await sendOtpEmail(email, code);
+    res.json({ message: "If that email is registered, a reset code has been sent." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not send reset code, try again later" });
+  }
+});
+
+// ---------- FORGOT PASSWORD: verify code and set new password ----------
+app.post("/api/reset-password", async (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+  const { otp, password } = req.body;
+  if (!email || !otp || !password) {
+    return res.status(400).json({ error: "Email, code and new password are required" });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters" });
+  }
+  try {
+    const o = await db.query("SELECT code_hash, expires_at, attempts FROM email_otps WHERE email = $1", [email]);
+    const row = o.rows[0];
+    if (!row || new Date(row.expires_at) < new Date()) {
+      return res.status(400).json({ error: "Code expired. Please request a new one." });
+    }
+    if (row.attempts >= 5) {
+      return res.status(429).json({ error: "Too many wrong attempts. Request a new code." });
+    }
+    const ok = await bcrypt.compare(String(otp).trim(), row.code_hash);
+    if (!ok) {
+      await db.query("UPDATE email_otps SET attempts = attempts + 1 WHERE email = $1", [email]);
+      return res.status(400).json({ error: "Wrong code, please check again" });
+    }
+    const hash = await bcrypt.hash(password, 10);
+    const upd = await db.query("UPDATE users SET password_hash = $1 WHERE email = $2 RETURNING id, name", [hash, email]);
+    if (upd.rowCount === 0) return res.status(404).json({ error: "Account not found" });
+    await db.query("DELETE FROM email_otps WHERE email = $1", [email]);
+    const user = upd.rows[0];
+    const token = jwt.sign({ id: user.id, name: user.name }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    res.json({ message: "Password changed!", token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not reset password, try again" });
   }
 });
 

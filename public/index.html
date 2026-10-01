@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saath">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -250,6 +250,20 @@ button{cursor:pointer}
         <div class="field"><label for="lPass">Password</label><input id="lPass" type="password" required autocomplete="current-password"></div>
         <p class="error" id="loginErr"></p>
         <button class="primary" type="submit">Login</button>
+        <button type="button" class="linkbtn" id="forgotLink" style="display:block;margin:10px auto 0">Forgot password?</button>
+      </form>
+
+      <form id="resetForm" hidden>
+        <p class="sub" id="resetSub">Enter your email and we'll send a reset code.</p>
+        <div class="field"><label for="rEmail">Email</label><input id="rEmail" type="email" autocomplete="email"></div>
+        <div id="resetStep2" hidden>
+          <div class="field"><label for="rOtp">6-digit code from email</label><input id="rOtp" inputmode="numeric" maxlength="6" placeholder="000000"></div>
+          <div class="field"><label for="rPass">New password (at least 8 characters)</label><input id="rPass" type="password" minlength="8" autocomplete="new-password"></div>
+        </div>
+        <p class="error" id="resetErr"></p>
+        <p class="okmsg" id="resetMsg"></p>
+        <button class="primary" type="submit" id="resetBtn">Send reset code</button>
+        <button type="button" class="linkbtn" id="backToLogin" style="display:block;margin:10px auto 0">Back to login</button>
       </form>
 
       <form id="signupForm" hidden>
@@ -492,6 +506,53 @@ function setAuthTab(isLogin) {
 }
 $("#tabLogin").onclick = () => setAuthTab(true);
 $("#tabSignup").onclick = () => setAuthTab(false);
+
+let resetSent = false;
+
+$("#forgotLink").onclick = () => {
+  $("#loginForm").hidden = true;
+  $("#resetForm").hidden = false;
+  $("#tabLogin").parentElement.style.display = "none";
+  $("#resetErr").textContent = ""; $("#resetMsg").textContent = "";
+  resetSent = false;
+  $("#resetStep2").hidden = true;
+  $("#resetBtn").textContent = "Send reset code";
+  $("#rEmail").value = $("#lEmail").value;
+};
+
+$("#backToLogin").onclick = () => {
+  $("#resetForm").hidden = true;
+  $("#loginForm").hidden = false;
+  $("#tabLogin").parentElement.style.display = "";
+};
+
+$("#resetForm").onsubmit = async e => {
+  e.preventDefault();
+  $("#resetErr").textContent = ""; $("#resetMsg").textContent = "";
+  const btn = $("#resetBtn");
+  btn.disabled = true;
+  if (!resetSent) {
+    try {
+      const data = await api("/api/forgot-password", { method: "POST", body: JSON.stringify({ email: $("#rEmail").value.trim() }) });
+      resetSent = true;
+      $("#resetStep2").hidden = false;
+      $("#resetMsg").textContent = data.message + " Check spam too.";
+      $("#resetBtn").textContent = "Change password";
+      $("#rEmail").readOnly = true;
+      $("#rOtp").focus();
+    } catch (err) { $("#resetErr").textContent = err.message; }
+    btn.disabled = false;
+    return;
+  }
+  const body = { email: $("#rEmail").value.trim(), otp: $("#rOtp").value.trim(), password: $("#rPass").value };
+  if (!/^\d{6}$/.test(body.otp)) { $("#resetErr").textContent = "Enter the 6-digit code"; btn.disabled = false; return; }
+  try {
+    const data = await api("/api/reset-password", { method: "POST", body: JSON.stringify(body) });
+    toast("Password changed!");
+    loginDone(data.token);
+  } catch (err) { $("#resetErr").textContent = err.message; }
+  btn.disabled = false;
+};
 
 $("#loginForm").onsubmit = async e => {
   e.preventDefault();

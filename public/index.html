@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1145,40 +1145,46 @@ let call = null;
 
 function setCallStatus(t) { $("#callStatus").textContent = t; }
 
-// ---------- RINGTONE (Web Audio, no file needed) ----------
+// ---------- RINGTONE (Web Audio, a pleasant little melody, no file) ----------
 let ringCtx = null, ringTimer = null, ringNodes = [];
 function stopRing() {
   if (ringTimer) { clearInterval(ringTimer); ringTimer = null; }
   ringNodes.forEach(n => { try { n.stop(); } catch(e){} });
   ringNodes = [];
 }
-function playTone(freq, start, dur, vol) {
+// a soft bell-like note (two sine layers for warmth)
+function playNote(freq, start, dur, vol) {
   if (!ringCtx) return;
-  const o = ringCtx.createOscillator();
-  const g = ringCtx.createGain();
-  o.type = "sine";
-  o.frequency.value = freq;
-  g.gain.setValueAtTime(0, ringCtx.currentTime + start);
-  g.gain.linearRampToValueAtTime(vol, ringCtx.currentTime + start + 0.04);
-  g.gain.linearRampToValueAtTime(0, ringCtx.currentTime + start + dur);
-  o.connect(g); g.connect(ringCtx.destination);
-  o.start(ringCtx.currentTime + start);
-  o.stop(ringCtx.currentTime + start + dur + 0.05);
-  ringNodes.push(o);
+  const t0 = ringCtx.currentTime + start;
+  [[freq, vol], [freq * 2, vol * 0.3]].forEach(([f, v]) => {
+    const o = ringCtx.createOscillator();
+    const g = ringCtx.createGain();
+    o.type = "sine";
+    o.frequency.value = f;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(v, t0 + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur); // bell-like decay
+    o.connect(g); g.connect(ringCtx.destination);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+    ringNodes.push(o);
+  });
 }
+// notes (Hz): C5=523 D5=587 E5=659 G5=784 A5=880 C6=1046
 function startRing(incoming) {
   stopRing();
   try {
     ringCtx = ringCtx || new (window.AudioContext || window.webkitAudioContext)();
     if (ringCtx.state === "suspended") ringCtx.resume();
   } catch (e) { return; }
-  // Saathly ring: two gentle notes, repeating (incoming a bit brighter)
-  const pattern = () => {
-    if (incoming) { playTone(660, 0, 0.3, 0.22); playTone(880, 0.32, 0.35, 0.22); }
-    else { playTone(480, 0, 0.4, 0.15); } // outgoing: softer single tone
-  };
+  const V = incoming ? 0.22 : 0.14;
+  const melody = incoming
+    // incoming: a cheerful rising phrase  E G A C6  then  A G
+    ? [[659,0.00,0.22],[784,0.20,0.22],[880,0.40,0.22],[1046,0.60,0.30],[880,0.95,0.20],[784,1.15,0.30]]
+    // outgoing: gentle two-note "ring"  G  C6 (softer, calmer)
+    : [[784,0.00,0.30],[1046,0.45,0.45]];
+  const pattern = () => melody.forEach(([f,st,du]) => playNote(f, st, du, V));
   pattern();
-  ringTimer = setInterval(pattern, incoming ? 1600 : 2500);
+  ringTimer = setInterval(pattern, incoming ? 2000 : 2800);
 }
 
 function showCall(mode) {

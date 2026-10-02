@@ -1,4 +1,4 @@
-// saath-v31-feedbackfix
+// saath-v34-groups
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -616,7 +616,7 @@ app.get("/api/profiles", authCheck, async (req, res) => {
 });
 
 // ---------- SEARCH PEOPLE ----------
-// Platform ke saare log (khud ko aur blocked ko chhod kar). Agar galti se pass kiya ho to yahan se dobara like kar sakte ho.
+// Sirf apne matches mein search karo (safe).
 app.get("/api/search", authCheck, async (req, res) => {
   const q = String(req.query.q || "").trim();
   try {
@@ -807,6 +807,86 @@ app.get("/api/calls", authCheck, async (req, res) => {
   }
 });
 
+// ---------- GROUPS ----------
+// member check helper
+async function isGroupMember(groupId, userId) {
+  const r = await db.query("SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2", [groupId, userId]);
+  return r.rowCount > 0;
+}
+
+// Create a group with some of my matches
+app.post("/api/groups", authCheck, async (req, res) => {
+  const name = String(req.body.name || "").trim();
+  const members = Array.isArray(req.body.members) ? req.body.members.map(Number).filter(Boolean) : [];
+  if (!name || name.length > 80) return res.status(400).json({ error: "Group name is required (max 80 chars)" });
+  try {
+    // sirf apne matches ko add kar sakte ho
+    const myMatches = await db.query(
+      `SELECT a.to_user AS id FROM swipes a
+       JOIN swipes b ON a.from_user=b.to_user AND a.to_user=b.from_user
+       WHERE a.from_user=$1 AND a.action='like' AND b.action='like'`,
+      [req.user.id]
+    );
+    const allowed = new Set(myMatches.rows.map(r => r.id));
+    const validMembers = members.filter(id => allowed.has(id));
+
+    const g = await db.query("INSERT INTO groups (name, created_by) VALUES ($1, $2) RETURNING id, name", [name, req.user.id]);
+    const groupId = g.rows[0].id;
+    // creator + valid members add karo
+    const toAdd = [req.user.id, ...validMembers];
+    for (const uid of toAdd) {
+      await db.query("INSERT INTO group_members (group_id, user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING", [groupId, uid]);
+    }
+    res.status(201).json({ id: groupId, name: g.rows[0].name });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not create group" });
+  }
+});
+
+// My groups list
+app.get("/api/groups", authCheck, async (req, res) => {
+  try {
+    const r = await db.query(
+      `SELECT g.id, g.name,
+              (SELECT COUNT(*) FROM group_members m WHERE m.group_id=g.id) AS member_count,
+              (SELECT text FROM group_messages gm WHERE gm.group_id=g.id ORDER BY created_at DESC LIMIT 1) AS last_text
+       FROM groups g
+       JOIN group_members gm ON gm.group_id=g.id
+       WHERE gm.user_id=$1
+       ORDER BY g.id DESC`,
+      [req.user.id]
+    );
+    res.json(r.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not load groups" });
+  }
+});
+
+// Group messages (history) + members
+app.get("/api/groups/:id", authCheck, async (req, res) => {
+  const groupId = Number(req.params.id);
+  try {
+    if (!(await isGroupMember(groupId, req.user.id))) return res.status(403).json({ error: "You are not in this group" });
+    const g = await db.query("SELECT id, name FROM groups WHERE id=$1", [groupId]);
+    const members = await db.query(
+      "SELECT u.id, u.name, u.photo_url FROM group_members m JOIN users u ON u.id=m.user_id WHERE m.group_id=$1",
+      [groupId]
+    );
+    const msgs = await db.query(
+      `SELECT gm.id, gm.from_user, gm.text, gm.created_at, u.name AS from_name, u.photo_url AS from_photo
+       FROM group_messages gm JOIN users u ON u.id=gm.from_user
+       WHERE gm.group_id=$1 ORDER BY gm.created_at`,
+      [groupId]
+    );
+    res.json({ group: g.rows[0], members: members.rows, messages: msgs.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not load group" });
+  }
+});
+
 // ---------- PURANE MESSAGES ----------
 app.get("/api/messages/:otherId", authCheck, async (req, res) => {
   const otherId = Number(req.params.otherId);
@@ -955,6 +1035,33 @@ io.on("connection", async (socket) => {
       // socket.user ne decline kiya, matlab caller wo doosra hai
       await logCall(data.to_user, socket.user.id, "declined", 0);
     } catch (err) { console.error(err); }
+  });
+
+  // ---------- GROUP: join room + send ----------
+  socket.on("group:join", async ({ group_id } = {}) => {
+    try {
+      const r = await db.query("SELECT 1 FROM group_members WHERE group_id=$1 AND user_id=$2", [group_id, socket.user.id]);
+      if (r.rowCount > 0) socket.join("group:" + group_id);
+    } catch (e) {}
+  });
+  socket.on("group:leave_room", ({ group_id } = {}) => { socket.leave("group:" + group_id); });
+  socket.on("group:send", async ({ group_id, text } = {}, reply = () => {}) => {
+    text = String(text || "").trim();
+    if (!text || text.length > 1000) return reply({ error: "Message khaali ya bahut lamba hai" });
+    try {
+      const r = await db.query("SELECT 1 FROM group_members WHERE group_id=$1 AND user_id=$2", [group_id, socket.user.id]);
+      if (r.rowCount === 0) return reply({ error: "You are not in this group" });
+      const ins = await db.query(
+        "INSERT INTO group_messages (group_id, from_user, text) VALUES ($1,$2,$3) RETURNING id, from_user, text, created_at",
+        [group_id, socket.user.id, text]
+      );
+      const msg = { ...ins.rows[0], from_name: socket.user.name, group_id };
+      io.to("group:" + group_id).emit("group:new_message", msg);
+      reply({ ok: true, message: msg });
+    } catch (err) {
+      console.error(err);
+      reply({ error: "Message not sent" });
+    }
   });
 
   // Chat khuli ho aur naya message aaye to turant "read" batao
@@ -1113,6 +1220,25 @@ async function setupDatabase() {
       endpoint TEXT UNIQUE NOT NULL,
       p256dh TEXT NOT NULL,
       auth TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS groups (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(80) NOT NULL,
+      created_by INT REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS group_members (
+      group_id INT REFERENCES groups(id) ON DELETE CASCADE,
+      user_id INT REFERENCES users(id) ON DELETE CASCADE,
+      joined_at TIMESTAMP DEFAULT NOW(),
+      PRIMARY KEY (group_id, user_id)
+    );
+    CREATE TABLE IF NOT EXISTS group_messages (
+      id SERIAL PRIMARY KEY,
+      group_id INT REFERENCES groups(id) ON DELETE CASCADE,
+      from_user INT REFERENCES users(id) ON DELETE CASCADE,
+      text TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);

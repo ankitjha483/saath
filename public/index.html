@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -166,6 +166,21 @@ button{cursor:pointer}
 .viewer-row .mini{width:40px;height:40px}
 .viewer-row b{flex:1}
 .viewer-row span{color:var(--muted);font-size:.85rem}
+
+/* groups */
+.group-head{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
+.newgroup-btn{background:var(--plum);color:#fff;border:0;border-radius:999px;padding:8px 16px;font-weight:600;font-size:.9rem}
+.grouprow{display:flex;gap:12px;align-items:center;padding:10px;border-radius:16px;background:none;border:0;width:100%;text-align:left;cursor:pointer}
+.grouprow:hover{background:var(--chip)}
+.gicon{width:52px;height:52px;border-radius:50%;background:var(--plum);color:#fff;display:grid;place-items:center;flex:none;font-size:1.3rem}
+.grouprow .t{flex:1;min-width:0}
+.grouprow .t b{display:block}
+.grouprow .t span{color:var(--muted);font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.member-pick{display:flex;gap:10px;align-items:center;padding:8px;border-radius:12px;cursor:pointer}
+.member-pick:hover{background:var(--chip)}
+.member-pick input{width:18px;height:18px;accent-color:var(--plum)}
+.member-pick .mini{width:40px;height:40px}
+.msg .gname{display:block;font-size:.72rem;color:var(--plum);font-weight:600;margin-bottom:2px}
 
 /* appearance */
 .accent-dot{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0}
@@ -381,6 +396,31 @@ button{cursor:pointer}
     </div>
   </section>
 
+  <!-- GROUPS LIST -->
+  <section class="screen" id="screen-groups">
+    <div class="scroll">
+      <div class="group-head">
+        <h2 class="section-title" style="margin:0">Groups</h2>
+        <button class="newgroup-btn" id="newGroupBtn">+ New group</button>
+      </div>
+      <div id="groupList"></div>
+    </div>
+  </section>
+
+  <!-- GROUP CHAT -->
+  <section class="screen" id="screen-groupchat">
+    <div class="chathead">
+      <button class="backbtn" id="gcBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"/></svg></button>
+      <div class="gicon" id="gcIcon" style="width:40px;height:40px;font-size:1rem"></div>
+      <div><b id="gcName"></b><div class="muted" style="font-size:.85rem" id="gcMembers"></div></div>
+    </div>
+    <div class="msgs" id="gcMsgs" aria-live="polite"></div>
+    <form class="composer" id="gcComposer">
+      <input id="gcInput" placeholder="Message the group" aria-label="Message" autocomplete="off" maxlength="1000">
+      <button class="primary" type="submit">Send</button>
+    </form>
+  </section>
+
   <!-- CALLS -->
   <section class="screen" id="screen-calls">
     <div class="scroll">
@@ -460,6 +500,7 @@ button{cursor:pointer}
     <button class="tab active" data-screen="discover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="3"/></svg>Discover</button>
     <button class="tab" data-screen="matches"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>Matches</button>
     <button class="tab" data-screen="status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" stroke-dasharray="4 3"/><circle cx="12" cy="12" r="3.5"/></svg>Status</button>
+    <button class="tab" data-screen="groups"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="16" cy="9" r="2.5"/><path d="M3 20c0-3 2.7-5 6-5s6 2 6 5M15.5 15c2.5.2 4.5 2 4.5 5"/></svg>Groups</button>
     <button class="tab" data-screen="calls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>Calls</button>
     <button class="tab" data-screen="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Profile</button>
   </nav>
@@ -552,11 +593,13 @@ function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("s
 
 function showScreen(name) {
   document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === "screen-" + name));
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.screen === name || (name === "chat" && t.dataset.screen === "matches")));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.screen === name || (name === "chat" && t.dataset.screen === "matches") || (name === "groupchat" && t.dataset.screen === "groups")));
   if (name !== "chat" && name !== "viewprofile") activeChat = null;
   if (name === "matches") loadMatches();
   if (name === "calls") loadCalls();
   if (name === "status") loadStatuses();
+  if (name === "groups") loadGroups();
+  if (name !== "groupchat" && activeGroup) { if (socket) socket.emit("group:leave_room", { group_id: activeGroup.id }); activeGroup = null; }
 }
 document.querySelectorAll(".tab").forEach(t => t.onclick = () => showScreen(t.dataset.screen));
 document.getElementById("hello").onclick = () => showScreen("profile");
@@ -840,6 +883,10 @@ function connectSocket() {
   socket.on("disconnect", () => updateStatus());
   socket.on("connect_error", () => updateStatus());
   socket.on("calls_updated", () => { if (document.querySelector("#screen-calls.active")) loadCalls(); });
+  socket.on("group:new_message", msg => {
+    if (activeGroup && msg.group_id === activeGroup.id) addGroupMsg(msg);
+    else { toast("New group message"); if (document.querySelector("#screen-groups.active")) loadGroups(); }
+  });
   socket.on("presence", ({ user_id, online, last_seen }) => {
     if (activeChat && activeChat.id === user_id) setChatPresence(online, last_seen);
     if (document.querySelector("#screen-matches.active")) loadMatches();
@@ -1593,6 +1640,88 @@ function notify(title, body) {
     n.onclick = () => { window.focus(); n.close(); };
   } catch (e) {}
 }
+
+// ================== GROUPS ==================
+let activeGroup = null;
+
+async function loadGroups() {
+  const list = $("#groupList");
+  list.innerHTML = `<p class="muted">Loading...</p>`;
+  try {
+    const groups = await api("/api/groups");
+    if (!groups.length) { list.innerHTML = `<p class="muted">No groups yet. Tap "New group" to create one with your matches.</p>`; return; }
+    list.innerHTML = groups.map(g => `<button class="grouprow" data-id="${g.id}" data-name="${esc(g.name)}">
+      <div class="gicon">${esc(g.name[0] || "#")}</div>
+      <div class="t"><b>${esc(g.name)}</b><span>${g.last_text ? esc(g.last_text) : g.member_count + " members"}</span></div>
+    </button>`).join("");
+    list.querySelectorAll(".grouprow").forEach(r => r.onclick = () => openGroup(+r.dataset.id, r.dataset.name));
+  } catch (err) { list.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+}
+
+$("#newGroupBtn").onclick = async () => {
+  // matches laakर chunne do
+  let matches = [];
+  try { matches = await api("/api/matches"); } catch (e) {}
+  if (!matches.length) { toast("Add some matches first to create a group"); return; }
+  const picks = matches.map(m => `<label class="member-pick"><input type="checkbox" value="${m.id}"><div class="mini">${avatar(m)}</div><b>${esc(m.name)}</b></label>`).join("");
+  openSheet(`<h3 id="sheetTitle">New group</h3>
+    <div class="field"><input id="groupNameInput" placeholder="Group name" maxlength="80" style="width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg)"></div>
+    <div class="muted" style="font-size:.85rem;margin:4px 0 6px">Add matches:</div>
+    <div style="max-height:40vh;overflow-y:auto">${picks}</div>
+    <button class="opt danger" id="groupCreate" style="color:var(--plum);border-color:var(--plum)">Create group</button>
+    <button class="cancel" id="groupCancel">Cancel</button>`);
+  $("#groupCancel").onclick = closeSheet;
+  $("#groupCreate").onclick = async () => {
+    const name = $("#groupNameInput").value.trim();
+    if (!name) { toast("Enter a group name"); return; }
+    const members = Array.from(document.querySelectorAll(".member-pick input:checked")).map(c => +c.value);
+    try {
+      const g = await api("/api/groups", { method: "POST", body: JSON.stringify({ name, members }) });
+      closeSheet(); toast("Group created");
+      loadGroups();
+      openGroup(g.id, g.name);
+    } catch (err) { toast(err.message); }
+  };
+};
+
+async function openGroup(id, name) {
+  activeGroup = { id, name };
+  $("#gcIcon").textContent = (name && name[0]) || "#";
+  $("#gcName").textContent = name;
+  $("#gcMsgs").innerHTML = `<div class="sysnote">Loading...</div>`;
+  showScreen("groupchat");
+  if (socket) socket.emit("group:join", { group_id: id });
+  try {
+    const data = await api("/api/groups/" + id);
+    $("#gcMembers").textContent = data.members.map(m => m.name).join(", ");
+    $("#gcMsgs").innerHTML = `<div class="sysnote">This is the start of ${esc(name)}.</div>`;
+    data.messages.forEach(addGroupMsg);
+  } catch (err) { $("#gcMsgs").innerHTML = `<div class="sysnote">${esc(err.message)}</div>`; }
+  $("#gcInput").focus();
+}
+
+function addGroupMsg(m) {
+  const mine = m.from_user === me().id;
+  const div = document.createElement("div");
+  div.className = "msg " + (mine ? "me" : "them");
+  const nameLine = mine ? "" : `<span class="gname">${esc(m.from_name || "")}</span>`;
+  div.innerHTML = `${nameLine}${esc(m.text)}<div class="meta-row"><time>${timeText(m.created_at)}</time></div>`;
+  $("#gcMsgs").appendChild(div);
+  $("#gcMsgs").scrollTop = $("#gcMsgs").scrollHeight;
+}
+
+$("#gcBack").onclick = () => showScreen("groups");
+$("#gcComposer").onsubmit = e => {
+  e.preventDefault();
+  const input = $("#gcInput");
+  const text = input.value.trim();
+  if (!text || !activeGroup) return;
+  if (!socket || !socket.connected) { toast("Not connected yet"); return; }
+  input.value = "";
+  socket.emit("group:send", { group_id: activeGroup.id, text }, reply => {
+    if (!reply || !reply.ok) { toast((reply && reply.error) || "Not sent"); input.value = text; }
+  });
+};
 
 // ================== THEME (mode + accent) ==================
 function applyTheme() {

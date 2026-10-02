@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -266,6 +266,11 @@ button{cursor:pointer}
 /* call screen */
 .callscreen{position:absolute;inset:0;background:linear-gradient(160deg,#0F5E57,#0B3D38);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:32px;text-align:center;z-index:8}
 .callscreen[hidden]{display:none}
+.callscreen video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0B2B28}
+.callscreen video.remote{z-index:0}
+.callscreen video.local{z-index:1;width:110px;height:150px;right:16px;top:calc(16px + env(safe-area-inset-top,0px));left:auto;bottom:auto;border-radius:14px;border:2px solid rgba(255,255,255,.4);object-fit:cover}
+.callscreen.has-video .mini,.callscreen.has-video h2,.callscreen.has-video .cstatus,.callscreen.has-video .callbtns{position:relative;z-index:2}
+.callscreen.voice-only video{display:none}
 .callscreen .mini{width:120px;height:120px;border:4px solid rgba(255,255,255,.25)}
 .callscreen.ringing .mini{animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,132,95,.6)}50%{box-shadow:0 0 0 18px rgba(244,132,95,0)}}
@@ -283,21 +288,6 @@ button{cursor:pointer}
 .cwrap{display:flex;flex-direction:column;align-items:center}
 .cwrap[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){.callscreen.ringing .mini{animation:none}}
-/* video call */
-.callscreen video{display:none;background:#000}
-.callscreen.vid #remoteVideo{display:block;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;visibility:hidden}
-.callscreen.vid.live #remoteVideo{visibility:visible}
-.callscreen.vid.hasl #localVideo{display:block;position:absolute;top:14px;right:14px;width:96px;height:136px;object-fit:cover;border-radius:14px;border:2px solid rgba(255,255,255,.5);z-index:3;transform:scaleX(-1)}
-.callscreen.vid.hasl #localVideo.back{transform:none}
-.callscreen.vid>.mini,.callscreen.vid>h2,.callscreen.vid>.cstatus,.callscreen.vid>.callbtns{position:relative;z-index:2}
-.callscreen.vid.live>.mini{display:none}
-.callscreen.vid.live>h2{position:absolute;top:16px;left:16px;right:126px;margin:0;font-size:1.15rem;text-align:left;text-shadow:0 1px 4px rgba(0,0,0,.6)}
-.callscreen.vid.live>.cstatus{position:absolute;top:44px;left:16px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
-.callscreen.vid.live>.callbtns{position:absolute;bottom:26px;left:0;right:0;margin:0;justify-content:center;gap:14px}
-.callscreen.vid.live .cbtn{width:58px;height:58px;background:rgba(0,0,0,.5)}
-.callscreen.vid.live .cbtn.end{background:#D9534F}
-.callscreen.vid.live .cbtn.on{background:#fff;color:#0F5E57}
-.callscreen.vid.live .clabel{text-shadow:0 1px 3px rgba(0,0,0,.7)}
 .toast.show{opacity:1}
 </style>
 </head>
@@ -321,6 +311,7 @@ button{cursor:pointer}
         <button id="tabSignup" aria-pressed="false">Sign up</button>
       </div>
 
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">By continuing you agree to our <a href="/terms" target="_blank" style="color:var(--plum);font-weight:600">Terms &amp; Privacy</a>.</p>
       <form id="loginForm">
         <div class="field"><label for="lEmail">Email</label><input id="lEmail" type="email" required autocomplete="email"></div>
         <div class="field"><label for="lPass">Password</label><input id="lPass" type="password" required autocomplete="current-password"></div>
@@ -357,6 +348,10 @@ button{cursor:pointer}
           <div class="field"><label for="sOtp">6-digit code sent to your email</label><input id="sOtp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div>
           <button type="button" class="linkbtn" id="resendBtn">Resend code</button>
         </div>
+        <label style="display:flex;gap:8px;align-items:flex-start;font-size:.88rem;color:var(--muted);margin:4px 0 10px">
+          <input type="checkbox" id="agreeTerms" style="width:18px;height:18px;margin-top:2px;accent-color:var(--plum)">
+          <span>I am 18+ and I agree to the <a href="/terms" target="_blank" style="color:var(--plum);font-weight:600">Terms &amp; Privacy Policy</a>.</span>
+        </label>
         <p class="error" id="signupErr"></p>
         <button class="primary" type="submit" id="signupBtn">Send code to email</button>
       </form>
@@ -396,8 +391,8 @@ button{cursor:pointer}
       <button class="backbtn" id="backBtn" aria-label="Back to matches"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"/></svg></button>
       <div class="mini" id="chatAvatar"></div>
       <div><b id="chatName"></b><div class="muted" style="font-size:.85rem" id="chatStatus"></div></div>
-      <button class="callbtn-head" id="videoBtn" aria-label="Start video call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button>
-      <button class="callbtn-head" id="callBtn" aria-label="Start voice call" style="margin-left:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button>
+      <button class="callbtn-head" id="videoBtn" aria-label="Start video call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m23 7-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button>
+      <button class="callbtn-head" id="callBtn" aria-label="Start voice call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button>
       <button class="menubtn" id="safetyBtn" aria-label="Block or report"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
     </div>
     <div class="msgs" id="msgs" aria-live="polite"></div>
@@ -541,18 +536,17 @@ button{cursor:pointer}
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" id="sheet"></div>
   </div>
   <div class="callscreen" id="callScreen" hidden role="dialog" aria-modal="true" aria-labelledby="callName">
-    <video id="remoteVideo" autoplay playsinline></video>
-    <video id="localVideo" autoplay playsinline muted></video>
     <div class="mini" id="callAvatar"></div>
     <h2 id="callName"></h2>
     <p class="cstatus" id="callStatus" aria-live="polite"></p>
     <div class="callbtns">
+      <div class="cwrap" id="wrapCam" hidden><button class="cbtn" id="callCam" aria-label="Camera on/off" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m23 7-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button><span class="clabel">Camera</span></div>
       <div class="cwrap" id="wrapMute"><button class="cbtn" id="callMute" aria-label="Mute" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg></button><span class="clabel" id="muteLabel">Mute</span></div>
-      <div class="cwrap" id="wrapCam" hidden><button class="cbtn" id="callCam" aria-label="Turn camera off" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button><span class="clabel" id="camLabel">Camera</span></div>
-      <div class="cwrap" id="wrapFlip" hidden><button class="cbtn" id="callFlip" aria-label="Switch camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg></button><span class="clabel">Flip</span></div>
       <div class="cwrap"><button class="cbtn end" id="callEnd" aria-label="End call"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-3.2 0-6.2.9-8.8 2.6a1.5 1.5 0 0 0-.5 2l1.2 2a1.5 1.5 0 0 0 1.9.6l2.5-1.1a1.5 1.5 0 0 0 .9-1.4V12a13 13 0 0 1 5.6 0v1.7a1.5 1.5 0 0 0 .9 1.4l2.5 1.1a1.5 1.5 0 0 0 1.9-.6l1.2-2a1.5 1.5 0 0 0-.5-2A15.9 15.9 0 0 0 12 9z"/></svg></button><span class="clabel" id="endLabel">End</span></div>
       <div class="cwrap" id="wrapAccept"><button class="cbtn accept" id="callAccept" aria-label="Answer call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button><span class="clabel">Answer</span></div>
     </div>
+    <video id="remoteVideo" class="remote" autoplay playsinline></video>
+    <video id="localVideo" class="local" autoplay playsinline muted></video>
     <audio id="remoteAudio" autoplay playsinline></audio>
   </div>
   <div class="story" id="story" role="dialog" aria-modal="true">
@@ -737,6 +731,7 @@ $("#signupForm").onsubmit = async e => {
   e.preventDefault();
   $("#signupErr").textContent = "";
   const btn = $("#signupBtn");
+  if (!otpSent && !$("#agreeTerms").checked) { $("#signupErr").textContent = "Please accept the Terms & Privacy Policy"; return; }
   btn.disabled = true;
   if (!otpSent) {
     try { await sendOtp(); } catch (err) { $("#signupErr").textContent = err.message; }
@@ -1160,16 +1155,7 @@ async function doSafety(path, body) {
 }
 
 // ================== VOICE CALL (WebRTC) ==================
-// TURN relay: needed so video works across mobile data / different networks.
-// Default below is Metered's shared "Open Relay". For reliability, make a free
-// account at metered.ca and replace the username/credential with your own.
-const TURN_USERNAME = "openrelayproject";
-const TURN_CREDENTIAL = "openrelayproject";
-const ICE_SERVERS = { iceServers: [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
-  { urls: ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp"], username: TURN_USERNAME, credential: TURN_CREDENTIAL }
-] };
+const ICE_SERVERS = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
 let call = null;
 
 function setCallStatus(t) { $("#callStatus").textContent = t; }
@@ -1221,51 +1207,30 @@ function showCall(mode) {
   $("#callAvatar").innerHTML = avatar(call.peer);
   $("#callName").textContent = call.peer.name;
   scr.hidden = false;
-  scr.classList.toggle("vid", !!call.video);
   scr.classList.toggle("ringing", mode === "outgoing" || mode === "incoming");
-  $("#wrapCam").hidden = !call.video || mode === "incoming";
-  $("#wrapFlip").hidden = !call.video || mode === "incoming" || !call.canFlip;
   $("#wrapAccept").hidden = mode !== "incoming";
   $("#wrapMute").hidden = mode === "incoming";
   $("#endLabel").textContent = mode === "incoming" ? "Decline" : "End";
-  setCallStatus({ outgoing: "Ringing...", incoming: call.video ? "Incoming video call" : "Incoming voice call", connecting: "Connecting..." }[mode] || "");
+  setCallStatus({ outgoing: "Ringing...", incoming: "Incoming voice call", connecting: "Connecting..." }[mode] || "");
   if (mode === "incoming") startRing(true);
   else if (mode === "outgoing") startRing(false);
   else stopRing();
 }
 
-async function getMic(video) {
-  const c = { audio: { echoCancellation: true, noiseSuppression: true } };
-  if (video) c.video = { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 24 } };
-  return navigator.mediaDevices.getUserMedia(c);
-}
-async function prepVideo() {
-  if (!call || !call.video) return;
-  call.facing = "user";
-  try {
-    const d = await navigator.mediaDevices.enumerateDevices();
-    call.canFlip = d.filter(x => x.kind === "videoinput").length > 1;
-  } catch (e) { call.canFlip = false; }
-  const lv = $("#localVideo");
-  lv.srcObject = call.stream;
-  lv.classList.remove("back");
-  lv.play().catch(() => {});
-  $("#callScreen").classList.add("hasl");
+async function getMedia(wantVideo) {
+  return navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: true, noiseSuppression: true },
+    video: wantVideo ? { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } } : false
+  });
 }
 
 function makePeer(peerId) {
   const pc = new RTCPeerConnection(ICE_SERVERS);
   pc.onicecandidate = e => { if (e.candidate) socket.emit("call:ice", { to_user: peerId, candidate: e.candidate }); };
   pc.ontrack = e => {
-    if (call && call.video) {
-      const v = $("#remoteVideo");
-      v.srcObject = e.streams[0];
-      v.play().catch(() => {});
-    } else {
-      const a = $("#remoteAudio");
-      a.srcObject = e.streams[0];
-      a.play().catch(() => {});
-    }
+    const stream = e.streams[0];
+    const a = $("#remoteAudio"); a.srcObject = stream; a.play().catch(() => {});
+    const rv = $("#remoteVideo"); rv.srcObject = stream; rv.play().catch(() => {});
   };
   pc.onconnectionstatechange = () => {
     if (!call || call.pc !== pc) return;
@@ -1281,46 +1246,53 @@ async function flushIce() {
   for (const c of call.pendingIce.splice(0)) { try { await call.pc.addIceCandidate(c); } catch (e) {} }
 }
 
-async function startCall(video) {
-  video = video === true;
+async function applyVideoUI() {
+  const scr = $("#callScreen");
+  const isVideo = call && call.video;
+  scr.classList.toggle("has-video", !!isVideo);
+  scr.classList.toggle("voice-only", !isVideo);
+  $("#wrapCam").hidden = !isVideo;
+  if (isVideo && call.stream) { const lv = $("#localVideo"); lv.srcObject = call.stream; lv.play().catch(()=>{}); }
+}
+
+async function startCall(wantVideo) {
   if (!activeChat || call) return;
   if (!socket || !socket.connected) { toast("No connection, one moment"); return; }
   if (!navigator.mediaDevices || !window.RTCPeerConnection) { toast("Calls aren’t supported in this browser"); return; }
   const peer = { id: activeChat.id, name: activeChat.name };
   let stream;
-  try { stream = await getMic(video); } catch (e) { toast(video ? "Please allow camera and microphone access" : "Please allow microphone access for calls"); return; }
-  call = { peer, stream, role: "caller", pendingIce: [], state: "outgoing", video };
-  await prepVideo();
+  try { stream = await getMedia(wantVideo); } catch (e) { toast(wantVideo ? "Please allow camera & mic access" : "Please allow microphone access"); return; }
+  call = { peer, stream, role: "caller", pendingIce: [], state: "outgoing", video: !!wantVideo };
   call.pc = makePeer(peer.id);
   stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
+  applyVideoUI();
   showCall("outgoing");
   try {
     const offer = await call.pc.createOffer();
     await call.pc.setLocalDescription(offer);
   } catch (e) { endCall("Call failed", false); return; }
-  socket.emit("call:offer", { to_user: peer.id, sdp: call.pc.localDescription }, reply => {
+  socket.emit("call:offer", { to_user: peer.id, sdp: call.pc.localDescription, video: !!wantVideo }, reply => {
     if (!reply || !reply.ok) endCall((reply && reply.error) || "Call failed", false);
   });
   call.timer = setTimeout(() => { if (call && call.state !== "active") endCall("No answer", true); }, 30000);
 }
 
-function onIncomingCall({ from_user, from_name, sdp }) {
+function onIncomingCall({ from_user, from_name, sdp, video }) {
   if (call) { socket.emit("call:decline", { to_user: from_user, reason: "busy" }); return; }
-  const isVideo = !!(sdp && typeof sdp.sdp === "string" && sdp.sdp.indexOf("m=video") !== -1);
-  call = { peer: { id: from_user, name: from_name }, role: "callee", offer: sdp, pendingIce: [], state: "incoming", video: isVideo };
+  call = { peer: { id: from_user, name: from_name }, role: "callee", offer: sdp, pendingIce: [], state: "incoming", video: !!video };
   showCall("incoming");
   if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]);
-  notify(isVideo ? "Incoming video call" : "Incoming call", from_name + " is calling you");
+  notify("Incoming call", from_name + " is calling you");
   call.timer = setTimeout(() => { if (call && call.state === "incoming") declineCall(); }, 30000);
 }
 
 async function acceptCall() {
   if (!call || call.state !== "incoming") return;
   let stream;
-  try { stream = await getMic(call.video); } catch (e) { toast(call.video ? "Please allow camera and microphone access" : "Please allow microphone access for calls"); declineCall(); return; }
+  try { stream = await getMedia(!!call.video); } catch (e) { toast(call.video ? "Please allow camera & mic access" : "Please allow microphone access"); declineCall(); return; }
   call.stream = stream;
+  applyVideoUI();
   call.state = "connecting";
-  await prepVideo();
   call.pc = makePeer(call.peer.id);
   stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
   showCall("connecting");
@@ -1362,7 +1334,6 @@ function onCallConnected() {
   clearTimeout(call.timer);
   showCall("active");
   $("#callScreen").classList.remove("ringing");
-  if (call.video) $("#callScreen").classList.add("live");
   const start = Date.now();
   const tick = () => {
     const s = Math.floor((Date.now() - start) / 1000);
@@ -1382,18 +1353,9 @@ function cleanupCall() {
   $("#remoteAudio").srcObject = null;
   $("#remoteVideo").srcObject = null;
   $("#localVideo").srcObject = null;
-  if (call.video && call.peer) {
-    try {
-      const L = JSON.parse(localStorage.getItem("saath_vcalls") || "[]");
-      L.push({ p: call.peer.id, t: Date.now() });
-      localStorage.setItem("saath_vcalls", JSON.stringify(L.slice(-100)));
-    } catch (e) {}
-  }
-  $("#callScreen").classList.remove("vid", "live", "hasl");
+  $("#callScreen").classList.remove("has-video","voice-only");
+  $("#wrapCam").hidden = true;
   $("#callScreen").hidden = true;
-  $("#callCam").classList.remove("on");
-  $("#callCam").setAttribute("aria-pressed", "false");
-  $("#camLabel").textContent = "Camera";
   $("#callMute").classList.remove("on");
   $("#callMute").setAttribute("aria-pressed", "false");
   $("#muteLabel").textContent = "Mute";
@@ -1415,33 +1377,13 @@ $("#callBtn").onclick = () => startCall(false);
 $("#videoBtn").onclick = () => startCall(true);
 $("#callCam").onclick = () => {
   if (!call || !call.stream) return;
-  const t = call.stream.getVideoTracks()[0];
-  if (!t) return;
-  t.enabled = !t.enabled;
-  const off = !t.enabled;
+  const track = call.stream.getVideoTracks()[0];
+  if (!track) return;
+  track.enabled = !track.enabled;
+  const off = !track.enabled;
   $("#callCam").classList.toggle("on", off);
   $("#callCam").setAttribute("aria-pressed", String(off));
-  $("#camLabel").textContent = off ? "Camera off" : "Camera";
-};
-$("#callFlip").onclick = async () => {
-  if (!call || !call.video || !call.stream || !call.pc) return;
-  const next = call.facing === "user" ? "environment" : "user";
-  const old = call.stream.getVideoTracks()[0];
-  const wasOn = old ? old.enabled : true;
-  try {
-    if (old) { old.stop(); call.stream.removeTrack(old); }
-    const ns = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: next }, width: { ideal: 640 }, height: { ideal: 480 } } });
-    const nt = ns.getVideoTracks()[0];
-    nt.enabled = wasOn;
-    const sender = call.pc.getSenders().find(s => s.track === null || (s.track && s.track.kind === "video"));
-    if (sender) await sender.replaceTrack(nt);
-    call.stream.addTrack(nt);
-    call.facing = next;
-    const lv = $("#localVideo");
-    lv.srcObject = call.stream;
-    lv.classList.toggle("back", next === "environment");
-    lv.play().catch(() => {});
-  } catch (e) { toast("Couldn’t switch camera"); }
+  $("#localVideo").style.opacity = off ? "0.3" : "1";
 };
 $("#callAccept").onclick = acceptCall;
 $("#callEnd").onclick = () => {
@@ -1489,34 +1431,27 @@ const ARROW = {
   missed: '<span class="dir missed" title="Missed">\u2199</span>'
 };
 function callLine(c) {
-  const vt = c.video ? "Video &middot; " : "";
   if (c.status === "missed" || c.status === "declined") {
     const label = c.direction === "out" ? (c.status === "declined" ? "Declined" : "No answer") : "Missed";
-    return (c.direction === "out" ? ARROW.out : ARROW.missed) + " " + vt + label;
+    return (c.direction === "out" ? ARROW.out : ARROW.missed) + " " + label;
   }
   const d = durText(c.duration);
-  return (c.direction === "out" ? ARROW.out : ARROW.in) + " " + vt + (d || "Answered");
+  return (c.direction === "out" ? ARROW.out : ARROW.in) + " " + (d || "Answered");
 }
 async function loadCalls() {
   const list = $("#callList");
   list.innerHTML = `<p class="muted">Loading...</p>`;
   try {
     const calls = await api("/api/calls");
-    let vrec = [];
-    try { vrec = JSON.parse(localStorage.getItem("saath_vcalls") || "[]"); } catch (e) {}
-    calls.forEach(c => {
-      const ts = new Date(c.created_at).getTime();
-      c.video = vrec.some(r => r.p === c.other.id && Math.abs(r.t - ts) < (c.duration || 0) * 1000 + 120000);
-    });
-    if (!calls.length) { list.innerHTML = `<p class="muted">No calls yet. Open a match and tap the phone or video icon to call.</p>`; return; }
-    list.innerHTML = calls.map(c => `<button class="callrow" data-id="${c.other.id}" data-name="${esc(c.other.name)}" data-video="${c.video ? 1 : 0}">
+    if (!calls.length) { list.innerHTML = `<p class="muted">No calls yet. Open a match and tap the phone icon to call.</p>`; return; }
+    list.innerHTML = calls.map(c => `<button class="callrow" data-id="${c.other.id}" data-name="${esc(c.other.name)}">
       <div class="mini">${avatar(c.other)}</div>
       <div class="t"><b>${esc(c.other.name)}</b><span>${callLine(c)} &middot; ${callWhen(c.created_at)}</span></div>
       <span class="callnow" aria-label="Call ${esc(c.other.name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span>
     </button>`).join("");
     list.querySelectorAll(".callrow").forEach(r => r.onclick = () => {
       activeChat = { id: +r.dataset.id, name: r.dataset.name };
-      startCall(r.dataset.video === "1");
+      startCall();
     });
   } catch (err) { list.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
 }
@@ -1599,7 +1534,7 @@ async function actOnProfile(person, action) {
 
 // ================== INVITE / SHARE ==================
 const INVITE_URL = location.origin;
-const INVITE_TEXT = "Hey! I'm on Saathly — chat, voice and video calls, and status, all in one app. Join me: " + INVITE_URL;
+const INVITE_TEXT = "Hey! I'm on Saathly — chat, voice call and status, all in one app. Join me: " + INVITE_URL;
 
 async function inviteFriends() {
   if (navigator.share) {

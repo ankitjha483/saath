@@ -1,4 +1,4 @@
-// saath-v38-delmsg
+// saath-v42-terms
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -130,6 +130,7 @@ app.use(express.static("public"));
 // /download ko download.html par bhejo (saaf link ke liye)
 const path = require("path");
 app.get("/download", (req, res) => res.sendFile(path.join(__dirname, "public", "download.html")));
+app.get("/terms", (req, res) => res.sendFile(path.join(__dirname, "public", "terms.html")));
 
 // ---------- EMAIL BHEJNA (Brevo) ----------
 async function sendOtpEmail(to, code) {
@@ -1004,7 +1005,7 @@ io.on("connection", async (socket) => {
 
   // ---------- VOICE CALL (WebRTC signaling) ----------
   // Awaaz seedha dono phones ke beech jaati hai. Server sirf "milane" ka kaam karta hai.
-  socket.on("call:offer", async ({ to_user, sdp } = {}, reply = () => {}) => {
+  socket.on("call:offer", async ({ to_user, sdp, video } = {}, reply = () => {}) => {
     try {
       if (!(await isMatch(socket.user.id, to_user))) {
         return reply({ error: "Sirf match ko call kar sakte ho" });
@@ -1019,7 +1020,8 @@ io.on("connection", async (socket) => {
       io.to("user:" + to_user).emit("call:incoming", {
         from_user: socket.user.id,
         from_name: socket.user.name,
-        sdp
+        sdp,
+        video: !!video
       });
       reply({ ok: true });
     } catch (err) {

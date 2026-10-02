@@ -3,22 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Saath</title>
+<title>Saathly</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Saath">
+<meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hind:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* ---- THEME SYSTEM ---- */
+/* accent color (hue) chosen by user, light/dark chosen by user */
 :root{
+  /* defaults = teal, light */
   --plum:#0F5E57; --marigold:#F4845F; --rose:#D9534F; --leaf:#14A38F;
   --bg:#ECF7F4; --surface:#FFFFFF; --ink:#0B2B28; --muted:#4E6E6A; --line:#D5EBE6; --chip:#E1F2EE;
 }
+/* ===== ACCENT CHOICES (light) ===== */
+[data-accent="teal"]{ --plum:#0F5E57; --marigold:#F4845F; --leaf:#14A38F; --bg:#ECF7F4; --line:#D5EBE6; --chip:#E1F2EE; }
+[data-accent="pink"]{ --plum:#BE3C66; --marigold:#F2A93B; --leaf:#C94f7c; --bg:#FCEEF3; --line:#F3D9E3; --chip:#F8E3EC; }
+[data-accent="blue"]{ --plum:#1E5F9E; --marigold:#F4845F; --leaf:#3B82C4; --bg:#EAF2FB; --line:#D4E3F5; --chip:#E1ECF9; }
+[data-accent="purple"]{ --plum:#6B3FA0; --marigold:#F4845F; --leaf:#8A5CC0; --bg:#F2ECFA; --line:#E3D6F3; --chip:#EBE1F7; }
+/* ===== DARK MODE (applies on top of accent) ===== */
+[data-mode="dark"]{
+  --bg:#0E1613; --surface:#16211D; --ink:#E8F1EE; --muted:#9FB3AD; --line:#263531; --chip:#1E2C28;
+}
+[data-mode="dark"][data-accent="teal"]{ --plum:#3DBCA6; --leaf:#3DBCA6; }
+[data-mode="dark"][data-accent="pink"]{ --plum:#EB7AA3; --leaf:#EB7AA3; --bg:#1A0E14; --surface:#241620; --line:#3A2430; --chip:#2E1C27; }
+[data-mode="dark"][data-accent="blue"]{ --plum:#5BA3E8; --leaf:#5BA3E8; --bg:#0C1420; --surface:#152233; --line:#243448; --chip:#1B2A3D; }
+[data-mode="dark"][data-accent="purple"]{ --plum:#B088E0; --leaf:#B088E0; --bg:#140E1F; --surface:#1E172B; --line:#2F2440; --chip:#271D37; }
 *,*::before,*::after{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hind",system-ui,sans-serif;font-size:16px;line-height:1.5;display:flex;justify-content:center;align-items:center}
@@ -151,6 +167,11 @@ button{cursor:pointer}
 .viewer-row b{flex:1}
 .viewer-row span{color:var(--muted);font-size:.85rem}
 
+/* appearance */
+.accent-dot{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0}
+.accent-dot[aria-pressed="true"]{border-color:var(--ink)}
+#modeSeg button[aria-pressed="true"]{background:var(--surface);font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+
 /* calls list */
 .callrow{display:flex;gap:12px;align-items:center;padding:10px;border-radius:16px;background:none;border:0;width:100%;text-align:left}
 .callrow:hover{background:var(--chip)}
@@ -245,7 +266,7 @@ button{cursor:pointer}
 <body>
 <main class="app">
   <header class="topbar">
-    <div class="logo">saath<span></span></div>
+    <div class="logo">saathly<span></span></div>
     <div style="display:flex;align-items:center;gap:8px">
       <button id="installBtn" hidden style="background:var(--plum);color:#fff;border:0;border-radius:999px;padding:6px 14px;font-weight:600;font-size:.9rem">Install app</button>
       <button class="hello" id="hello" style="background:none;border:0;cursor:pointer" aria-label="Open your profile"></button>
@@ -256,7 +277,7 @@ button{cursor:pointer}
   <section class="screen" id="screen-auth">
     <div class="auth">
       <h1>Meet. Talk.</h1>
-      <p class="sub">On Saath, conversation comes first. Adding a photo is optional.</p>
+      <p class="sub">On Saathly, conversation comes first. Adding a photo is optional.</p>
       <div class="seg" role="group">
         <button id="tabLogin" aria-pressed="true">Login</button>
         <button id="tabSignup" aria-pressed="false">Sign up</button>
@@ -308,7 +329,7 @@ button{cursor:pointer}
   <section class="screen" id="screen-discover">
       <button id="inviteBtn3" style="margin:8px 16px 0;background:var(--chip);border:0;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;text-align:left;cursor:pointer">
         <span style="width:34px;height:34px;border-radius:50%;background:var(--plum);color:#fff;display:grid;place-items:center;flex:none">✉</span>
-        <span style="flex:1"><b style="display:block;font-size:.95rem">Invite friends</b><span class="muted" style="font-size:.82rem">Share Saath with people you know</span></span>
+        <span style="flex:1"><b style="display:block;font-size:.95rem">Invite friends</b><span class="muted" style="font-size:.82rem">Share Saathly with people you know</span></span>
       </button>
     <div class="deck" id="deck"></div>
     <div class="actions">
@@ -406,12 +427,31 @@ button{cursor:pointer}
         <p class="okmsg" id="editMsg"></p>
         <button class="primary" type="submit" id="saveProfileBtn" style="width:100%">Save profile</button>
       </form>
-      <button class="uploadbtn" id="inviteBtn" style="width:100%;margin-top:6px">Invite friends to Saath</button>
-      <div class="note" style="margin-top:20px">If someone bothers you, use the ⋮ button at the top of a chat to block or report them.</div>
+      <button class="uploadbtn" id="inviteBtn" style="width:100%;margin-top:6px">Invite friends to Saathly</button>
+      <div class="note" style="margin-top:20px" id="appearanceBox">
+        <h3 style="font-size:1.05rem;margin-bottom:8px">Appearance</h3>
+        <div style="margin-bottom:10px">
+          <div class="muted" style="font-size:.85rem;margin-bottom:6px">Mode</div>
+          <div class="seg" id="modeSeg">
+            <button data-mode="light" type="button">Light</button>
+            <button data-mode="dark" type="button">Dark</button>
+          </div>
+        </div>
+        <div>
+          <div class="muted" style="font-size:.85rem;margin-bottom:6px">Color</div>
+          <div style="display:flex;gap:10px" id="accentRow">
+            <button type="button" class="accent-dot" data-accent="teal" style="background:#0F5E57" aria-label="Teal"></button>
+            <button type="button" class="accent-dot" data-accent="pink" style="background:#BE3C66" aria-label="Pink"></button>
+            <button type="button" class="accent-dot" data-accent="blue" style="background:#1E5F9E" aria-label="Blue"></button>
+            <button type="button" class="accent-dot" data-accent="purple" style="background:#6B3FA0" aria-label="Purple"></button>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:14px">If someone bothers you, use the ⋮ button at the top of a chat to block or report them.</div>
       <button class="ghostbtn" id="logoutBtn" style="margin-top:12px">Logout</button>
       <button id="deleteBtn" style="background:none;border:0;color:var(--rose);font-size:.85rem;text-decoration:underline;cursor:pointer;display:block;margin:14px auto 0">Delete my account</button>
       <div class="privacy-note">
-        <b>Your privacy:</b> Saath stores only what you provide (name, email, photo, and chats) to run the app. We never show your email to other users, and your password is stored in an unreadable, hashed form. Deleting your account removes all of your data permanently.
+        <b>Your privacy:</b> Saathly stores only what you provide (name, email, photo, and chats) to run the app. We never show your email to other users, and your password is stored in an unreadable, hashed form. Deleting your account removes all of your data permanently.
       </div>
     </div>
   </section>
@@ -1261,12 +1301,12 @@ async function actOnProfile(person, action) {
 
 // ================== INVITE / SHARE ==================
 const INVITE_URL = location.origin;
-const INVITE_TEXT = "Hey! I'm on Saath — chat, voice call and status, all in one app. Join me: " + INVITE_URL;
+const INVITE_TEXT = "Hey! I'm on Saathly — chat, voice call and status, all in one app. Join me: " + INVITE_URL;
 
 async function inviteFriends() {
   if (navigator.share) {
     try {
-      await navigator.share({ title: "Saath", text: INVITE_TEXT, url: INVITE_URL });
+      await navigator.share({ title: "Saathly", text: INVITE_TEXT, url: INVITE_URL });
     } catch (e) { /* user cancelled */ }
   } else {
     try {
@@ -1554,6 +1594,35 @@ function notify(title, body) {
   } catch (e) {}
 }
 
+// ================== THEME (mode + accent) ==================
+function applyTheme() {
+  let mode = "light", accent = "teal";
+  try {
+    mode = localStorage.getItem("saath_mode") || "light";
+    accent = localStorage.getItem("saath_accent") || "teal";
+  } catch (e) {}
+  document.documentElement.setAttribute("data-mode", mode);
+  document.documentElement.setAttribute("data-accent", accent);
+  // update theme-color meta so phone status bar matches
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) {
+    const c = getComputedStyle(document.documentElement).getPropertyValue("--plum").trim();
+    if (c) metaTheme.setAttribute("content", c);
+  }
+  // reflect selection in the UI if present
+  document.querySelectorAll("#modeSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode));
+  document.querySelectorAll(".accent-dot").forEach(b => b.setAttribute("aria-pressed", b.dataset.accent === accent));
+}
+
+document.addEventListener("click", e => {
+  const modeBtn = e.target.closest("#modeSeg button");
+  if (modeBtn) { try { localStorage.setItem("saath_mode", modeBtn.dataset.mode); } catch (x) {} applyTheme(); return; }
+  const accBtn = e.target.closest(".accent-dot");
+  if (accBtn) { try { localStorage.setItem("saath_accent", accBtn.dataset.accent); } catch (x) {} applyTheme(); return; }
+});
+
+applyTheme();
+
 // ================== START ==================
 let myProfile = null;
 
@@ -1666,12 +1735,12 @@ document.getElementById("installBtn").onclick = async () => {
   const choice = await deferredInstall.userChoice;
   deferredInstall = null;
   document.getElementById("installBtn").hidden = true;
-  if (choice && choice.outcome === "accepted") toast("Installing Saath...");
+  if (choice && choice.outcome === "accepted") toast("Installing Saathly...");
 };
 
 window.addEventListener("appinstalled", () => {
   document.getElementById("installBtn").hidden = true;
-  toast("Saath added to your home screen!");
+  toast("Saathly added to your home screen!");
 });
 
 if (token) startApp(); else showScreen("auth");

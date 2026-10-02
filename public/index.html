@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -167,6 +167,12 @@ button{cursor:pointer}
 .viewer-row .mini{width:40px;height:40px}
 .viewer-row b{flex:1}
 .viewer-row span{color:var(--muted);font-size:.85rem}
+
+/* unread badges */
+.tab{position:relative}
+.tabbadge{position:absolute;top:2px;left:calc(50% + 4px);background:var(--rose);color:#fff;border-radius:999px;font-size:.68rem;min-width:17px;height:17px;line-height:17px;padding:0 4px;font-weight:700}
+.tabbadge[hidden]{display:none}
+.unread-badge{background:var(--rose);color:#fff;border-radius:999px;font-size:.72rem;min-width:20px;height:20px;line-height:20px;text-align:center;padding:0 6px;font-weight:700;flex:none}
 
 /* groups */
 .group-head{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
@@ -501,7 +507,7 @@ button{cursor:pointer}
 
   <nav class="tabs" id="tabs" hidden>
     <button class="tab active" data-screen="discover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="3"/></svg>Discover</button>
-    <button class="tab" data-screen="matches"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>Matches</button>
+    <button class="tab" data-screen="matches"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>Matches<span class="tabbadge" id="matchesBadge" hidden>0</span></button>
     <button class="tab" data-screen="status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" stroke-dasharray="4 3"/><circle cx="12" cy="12" r="3.5"/></svg>Status</button>
     <button class="tab" data-screen="groups"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="16" cy="9" r="2.5"/><path d="M3 20c0-3 2.7-5 6-5s6 2 6 5M15.5 15c2.5.2 4.5 2 4.5 5"/></svg>Groups</button>
     <button class="tab" data-screen="calls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>Calls</button>
@@ -855,6 +861,22 @@ function showMatch(p) {
 $("#ovClose").onclick = () => $("#overlay").classList.remove("show");
 
 // ================== MATCHES ==================
+function updateMatchesBadge(n) {
+  const b = $("#matchesBadge");
+  if (!b) return;
+  if (n > 0) { b.textContent = n > 99 ? "99+" : n; b.hidden = false; }
+  else b.hidden = true;
+}
+
+async function refreshUnread() {
+  // lightweight: reload matches data to recompute unread, but only update the badge
+  try {
+    const matches = await api("/api/matches");
+    const total = matches.reduce((s, m) => s + (Number(m.unread_count) || 0), 0);
+    updateMatchesBadge(total);
+  } catch (e) {}
+}
+
 async function loadMatches() {
   const list = $("#matchList");
   list.innerHTML = `<p class="muted">Loading...</p>`;
@@ -862,7 +884,14 @@ async function loadMatches() {
     const matches = await api("/api/matches");
     knownMatches = matches;
     if (!matches.length) { list.innerHTML = `<p class="muted">No matches yet. Like a few people in Discover.</p>`; return; }
-    list.innerHTML = matches.map(m => `<button class="matchrow" data-name="${esc(m.name)}"><div class="mini">${avatar(m)}</div><div class="t"><b>${esc(m.name)}, ${esc(m.age)}</b><span class="muted" id="pres-${m.id}">${esc(m.city || "")}</span></div></button>`).join("");
+    let totalUnread = 0;
+    list.innerHTML = matches.map(m => {
+      const u = Number(m.unread_count) || 0;
+      totalUnread += u;
+      const badge = u > 0 ? `<span class="unread-badge">${u}</span>` : "";
+      return `<button class="matchrow" data-name="${esc(m.name)}"><div class="mini">${avatar(m)}</div><div class="t"><b>${esc(m.name)}, ${esc(m.age)}</b><span class="muted" id="pres-${m.id}">${esc(m.city || "")}</span></div>${badge}</button>`;
+    }).join("");
+    updateMatchesBadge(totalUnread);
     // har match ka online status poochho
     matches.forEach(m => {
       if (!socket || !socket.connected) return;
@@ -919,6 +948,7 @@ function connectSocket() {
       const who = nameFor(msg.from_user);
       toast("New message" + (who ? " from " + who : ""));
       notify(who ? who : "New message", msg.text);
+      refreshUnread();
     }
     // Matches list ko refresh karo taaki naya chat upar aaye
     if (document.querySelector("#screen-matches.active")) loadMatches();
@@ -978,6 +1008,7 @@ async function openChat(person) {
     history.forEach(addMsg);
   } catch (err) { toast(err.message); }
   $("#msgInput").focus();
+  setTimeout(refreshUnread, 500);
 }
 
 $("#backBtn").onclick = () => showScreen("matches");
@@ -1860,6 +1891,7 @@ function startApp() {
   $("#tabs").hidden = false;
   connectSocket();
   loadMatches();
+  refreshUnread();
   showScreen("discover");
   loadProfiles();
   loadMyProfile();

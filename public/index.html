@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -304,8 +304,8 @@ button{cursor:pointer}
   <!-- LOGIN / SIGN UP -->
   <section class="screen" id="screen-auth">
     <div class="auth">
-      <h1>Meet. Talk.</h1>
-      <p class="sub">On Saathly, conversation comes first. Adding a photo is optional.</p>
+      <h1>Meet. Chat. Connect.</h1>
+      <p class="sub">Chat, call and share moments with people you connect with.</p>
       <div class="seg" role="group">
         <button id="tabLogin" aria-pressed="true">Login</button>
         <button id="tabSignup" aria-pressed="false">Sign up</button>
@@ -374,10 +374,10 @@ button{cursor:pointer}
   <!-- MATCHES -->
   <section class="screen" id="screen-matches">
     <div class="scroll">
-      <h2 class="section-title">Your matches</h2>
+      <h2 class="section-title">Your connections</h2>
       <div class="searchbar" style="margin:0 0 12px">
         <svg class="sicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3" stroke-linecap="round"/></svg>
-        <input id="searchInput" type="search" placeholder="Search your matches" autocomplete="off">
+        <input id="searchInput" type="search" placeholder="Search your connections" autocomplete="off">
         <button class="sclear" id="searchClear" hidden aria-label="Clear">×</button>
         <div class="searchResults" id="searchResults" hidden></div>
       </div>
@@ -476,13 +476,6 @@ button{cursor:pointer}
         <div class="field"><label for="eCity">City</label><input id="eCity" maxlength="50" placeholder="e.g. Gurugram"></div>
         <div class="field"><label for="eJob">Work / studies</label><input id="eJob" maxlength="100" placeholder="e.g. Product analyst"></div>
         <div class="field"><label for="eLang">Languages</label><input id="eLang" maxlength="100" placeholder="e.g. Hindi, English"></div>
-        <div class="field"><label for="eIntent">Looking for</label>
-          <select id="eIntent">
-            <option value="">Prefer not to say</option>
-            <option>Long-term relationship</option>
-            <option>Marriage</option>
-            <option>Figuring it out</option>
-          </select></div>
         <div class="field"><label for="eQ">Prompt (a question about you)</label><input id="eQ" maxlength="100" placeholder="e.g. A perfect Sunday looks like"></div>
         <div class="field"><label for="eA">Your answer</label><input id="eA" maxlength="200" placeholder="e.g. Chai, a good book, and a long walk"></div>
         <p class="okmsg" id="editMsg"></p>
@@ -784,7 +777,7 @@ async function loadProfiles() {
 }
 
 function cardHTML(p) {
-  const chips = [p.intent, p.languages ? "Speaks " + p.languages : null].filter(Boolean).map(c => `<span class="chip">${esc(c)}</span>`).join("");
+  const chips = [p.languages ? "Speaks " + p.languages : null].filter(Boolean).map(c => `<span class="chip">${esc(c)}</span>`).join("");
   const prompt = p.prompt_question ? `<div class="prompt"><b>${esc(p.prompt_question)}</b>${esc(p.prompt_answer)}</div>` : "";
   const meta = [p.job, p.city].filter(Boolean).map(esc).join(", ");
   return `<div class="art">${avatar(p)}<div class="stamp like">LIKE</div><div class="stamp nope">PASS</div></div>
@@ -800,7 +793,7 @@ function renderDeck() {
   const deck = $("#deck");
   deck.innerHTML = "";
   if (!profiles.length) {
-    deck.innerHTML = `<div class="empty"><h3>You’ve seen everyone</h3><p>New people join every day. You can also take another look at people you passed.</p><button class="primary" id="undoPassBtn" style="width:auto;margin-top:6px">See passed people again</button></div>`;
+    deck.innerHTML = `<div class="empty"><h3>You’ve seen everyone for now</h3><p>New people join every day. You can also take another look at people you passed.</p><button class="primary" id="undoPassBtn" style="width:auto;margin-top:6px">See passed people again</button></div>`;
     const ub = document.getElementById("undoPassBtn");
     if (ub) ub.onclick = async () => {
       ub.disabled = true; ub.textContent = "Bringing them back...";
@@ -871,7 +864,7 @@ $("#passBtn").onclick = () => swipe("pass");
 
 function showMatch(p) {
   $("#ovAvatar").innerHTML = avatar(p);
-  $("#ovText").textContent = `You and ${p.name} liked each other.`;
+  $("#ovText").textContent = `You and ${p.name} are now connected.`;
   $("#overlay").classList.add("show");
 }
 $("#ovClose").onclick = () => $("#overlay").classList.remove("show");
@@ -899,7 +892,7 @@ async function loadMatches() {
   try {
     const matches = await api("/api/matches");
     knownMatches = matches;
-    if (!matches.length) { list.innerHTML = `<p class="muted">No matches yet. Like a few people in Discover.</p>`; return; }
+    if (!matches.length) { list.innerHTML = `<p class="muted">No connections yet. Connect with a few people in Discover.</p>`; return; }
     let totalUnread = 0;
     list.innerHTML = matches.map(m => {
       const u = Number(m.unread_count) || 0;
@@ -1054,7 +1047,7 @@ async function openChat(person) {
   refreshPresence(person.id);
   showScreen("chat");
   activeChat = person;
-  $("#msgs").innerHTML = `<div class="sysnote">You matched with ${esc(person.name)}. Be kind.</div>`;
+  $("#msgs").innerHTML = `<div class="sysnote">You’re now connected with ${esc(person.name)}. Say hi!</div>`;
   try {
     const history = await api("/api/messages/" + person.id);
     history.forEach(addMsg);
@@ -1848,7 +1841,7 @@ $("#newGroupBtn").onclick = async () => {
   // matches laakर chunne do
   let matches = [];
   try { matches = await api("/api/matches"); } catch (e) {}
-  if (!matches.length) { toast("Add some matches first to create a group"); return; }
+  if (!matches.length) { toast("Connect with some people first to create a group"); return; }
   const picks = matches.map(m => `<label class="member-pick"><input type="checkbox" value="${m.id}"><div class="mini">${avatar(m)}</div><b>${esc(m.name)}</b></label>`).join("");
   openSheet(`<h3 id="sheetTitle">New group</h3>
     <div class="field"><input id="groupNameInput" placeholder="Group name" maxlength="80" style="width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg)"></div>
@@ -1946,7 +1939,6 @@ function fillEditForm(p) {
   $("#eCity").value = p.city || "";
   $("#eJob").value = p.job || "";
   $("#eLang").value = p.languages || "";
-  $("#eIntent").value = p.intent || "";
   $("#eQ").value = p.prompt_question || "";
   $("#eA").value = p.prompt_answer || "";
 }
@@ -1973,7 +1965,7 @@ document.addEventListener("submit", async e => {
   btn.disabled = true; btn.textContent = "Saving...";
   const body = {
     name: $("#eName").value, city: $("#eCity").value, job: $("#eJob").value,
-    languages: $("#eLang").value, intent: $("#eIntent").value,
+    languages: $("#eLang").value, 
     prompt_question: $("#eQ").value, prompt_answer: $("#eA").value
   };
   try {

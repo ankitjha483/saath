@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1145,6 +1145,42 @@ let call = null;
 
 function setCallStatus(t) { $("#callStatus").textContent = t; }
 
+// ---------- RINGTONE (Web Audio, no file needed) ----------
+let ringCtx = null, ringTimer = null, ringNodes = [];
+function stopRing() {
+  if (ringTimer) { clearInterval(ringTimer); ringTimer = null; }
+  ringNodes.forEach(n => { try { n.stop(); } catch(e){} });
+  ringNodes = [];
+}
+function playTone(freq, start, dur, vol) {
+  if (!ringCtx) return;
+  const o = ringCtx.createOscillator();
+  const g = ringCtx.createGain();
+  o.type = "sine";
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0, ringCtx.currentTime + start);
+  g.gain.linearRampToValueAtTime(vol, ringCtx.currentTime + start + 0.04);
+  g.gain.linearRampToValueAtTime(0, ringCtx.currentTime + start + dur);
+  o.connect(g); g.connect(ringCtx.destination);
+  o.start(ringCtx.currentTime + start);
+  o.stop(ringCtx.currentTime + start + dur + 0.05);
+  ringNodes.push(o);
+}
+function startRing(incoming) {
+  stopRing();
+  try {
+    ringCtx = ringCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (ringCtx.state === "suspended") ringCtx.resume();
+  } catch (e) { return; }
+  // Saathly ring: two gentle notes, repeating (incoming a bit brighter)
+  const pattern = () => {
+    if (incoming) { playTone(660, 0, 0.3, 0.22); playTone(880, 0.32, 0.35, 0.22); }
+    else { playTone(480, 0, 0.4, 0.15); } // outgoing: softer single tone
+  };
+  pattern();
+  ringTimer = setInterval(pattern, incoming ? 1600 : 2500);
+}
+
 function showCall(mode) {
   const scr = $("#callScreen");
   $("#callAvatar").innerHTML = avatar(call.peer);
@@ -1155,6 +1191,9 @@ function showCall(mode) {
   $("#wrapMute").hidden = mode === "incoming";
   $("#endLabel").textContent = mode === "incoming" ? "Decline" : "End";
   setCallStatus({ outgoing: "Ringing...", incoming: "Incoming voice call", connecting: "Connecting..." }[mode] || "");
+  if (mode === "incoming") startRing(true);
+  else if (mode === "outgoing") startRing(false);
+  else stopRing();
 }
 
 async function getMic() {
@@ -1253,6 +1292,7 @@ async function onRemoteIce({ from_user, candidate }) {
 
 function onCallConnected() {
   if (!call || call.state === "active") return;
+  stopRing();
   call.state = "active";
   call.answered = true;
   call.startedAt = Date.now();
@@ -1269,6 +1309,7 @@ function onCallConnected() {
 }
 
 function cleanupCall() {
+  stopRing();
   if (!call) return;
   clearTimeout(call.timer);
   clearInterval(call.tick);

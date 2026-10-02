@@ -1,4 +1,4 @@
-// saath-v35-chatimg
+// saath-v36-downloadroute
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -126,6 +126,10 @@ async function sendPush(userId, payload) {
 }
 
 app.use(express.static("public"));
+
+// /download ko download.html par bhejo (saaf link ke liye)
+const path = require("path");
+app.get("/download", (req, res) => res.sendFile(path.join(__dirname, "public", "download.html")));
 
 // ---------- EMAIL BHEJNA (Brevo) ----------
 async function sendOtpEmail(to, code) {

@@ -1,4 +1,4 @@
-// saath-v36-downloadroute
+// saath-v38-delmsg
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -718,7 +718,10 @@ app.get("/api/matches", authCheck, async (req, res) => {
       `SELECT u.id, u.name, u.age, u.city, u.photo_url, u.last_seen,
               (SELECT MAX(created_at) FROM messages m
                WHERE (m.from_user = $1 AND m.to_user = u.id) OR (m.from_user = u.id AND m.to_user = $1)
-              ) AS last_msg_at
+              ) AS last_msg_at,
+              (SELECT COUNT(*) FROM messages m2
+               WHERE m2.from_user = u.id AND m2.to_user = $1 AND m2.read_at IS NULL
+              ) AS unread_count
        FROM swipes a
        JOIN swipes b ON a.from_user = b.to_user AND a.to_user = b.from_user
        JOIN users u ON u.id = a.to_user
@@ -1085,6 +1088,25 @@ io.on("connection", async (socket) => {
     } catch (err) {
       console.error(err);
       reply({ error: "Message not sent" });
+    }
+  });
+
+  // Apna message delete karo (sirf bhejne wala, dono taraf se hat jaye)
+  socket.on("delete_message", async ({ message_id } = {}, reply = () => {}) => {
+    try {
+      const r = await db.query(
+        "SELECT from_user, to_user FROM messages WHERE id = $1",
+        [message_id]
+      );
+      const m = r.rows[0];
+      if (!m || m.from_user !== socket.user.id) return reply({ error: "Not allowed" });
+      await db.query("UPDATE messages SET text = '', image_url = NULL WHERE id = $1", [message_id]);
+      io.to("user:" + m.to_user).emit("message_deleted", { message_id });
+      io.to("user:" + m.from_user).emit("message_deleted", { message_id });
+      reply({ ok: true });
+    } catch (err) {
+      console.error(err);
+      reply({ error: "Could not delete" });
     }
   });
 

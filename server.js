@@ -1,4 +1,4 @@
-// saath-v34-groups
+// saath-v35-chatimg
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -461,6 +461,26 @@ app.delete("/api/me", authCheck, async (req, res) => {
   }
 });
 
+// ---------- CHAT IMAGE UPLOAD ----------
+app.post("/api/chat-image", authCheck, (req, res) => {
+  if (!photosEnabled) return res.status(503).json({ error: "Image upload is not set up on the server yet" });
+  upload.single("photo")(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: "No image received" });
+    try {
+      const dataUri = "data:" + req.file.mimetype + ";base64," + req.file.buffer.toString("base64");
+      const result = await cloudinary.uploader.upload(dataUri, {
+        folder: "saath/chat",
+        transformation: [{ width: 1200, crop: "limit" }, { quality: "auto" }]
+      });
+      res.json({ image_url: result.secure_url });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Image upload failed, please try again" });
+    }
+  });
+});
+
 // ---------- PHOTO UPLOAD ----------
 app.post("/api/photo", authCheck, (req, res) => {
   if (!photosEnabled) {
@@ -895,7 +915,7 @@ app.get("/api/messages/:otherId", authCheck, async (req, res) => {
       return res.status(403).json({ error: "Sirf match ke saath chat kar sakte ho" });
     }
     const result = await db.query(
-      `SELECT id, from_user, to_user, text, created_at, delivered_at, read_at FROM messages
+      `SELECT id, from_user, to_user, text, image_url, created_at, delivered_at, read_at FROM messages
        WHERE (from_user = $1 AND to_user = $2) OR (from_user = $2 AND to_user = $1)
        ORDER BY created_at`,
       [req.user.id, otherId]
@@ -1079,18 +1099,22 @@ io.on("connection", async (socket) => {
     } catch (err) { console.error(err); }
   });
 
-  socket.on("send_message", async ({ to_user, text }, reply) => {
+  socket.on("send_message", async ({ to_user, text, image_url }, reply) => {
     text = String(text || "").trim();
-    if (!text || text.length > 1000) {
-      return reply({ error: "Message khaali ya bahut lamba hai" });
+    image_url = image_url ? String(image_url) : null;
+    if (!text && !image_url) {
+      return reply({ error: "Message khaali hai" });
+    }
+    if (text.length > 1000) {
+      return reply({ error: "Message bahut lamba hai" });
     }
     try {
       if (!(await isMatch(socket.user.id, to_user))) {
         return reply({ error: "Sirf match ke saath chat kar sakte ho" });
       }
       const result = await db.query(
-        "INSERT INTO messages (from_user, to_user, text) VALUES ($1, $2, $3) RETURNING id, from_user, to_user, text, created_at",
-        [socket.user.id, to_user, text]
+        "INSERT INTO messages (from_user, to_user, text, image_url) VALUES ($1, $2, $3, $4) RETURNING id, from_user, to_user, text, image_url, created_at",
+        [socket.user.id, to_user, text, image_url]
       );
       const msg = result.rows[0];
 
@@ -1206,6 +1230,7 @@ async function setupDatabase() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen TIMESTAMP;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMP;
     ALTER TABLE messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMP;
+    ALTER TABLE messages ADD COLUMN IF NOT EXISTS image_url TEXT;
     CREATE TABLE IF NOT EXISTS calls (
       id SERIAL PRIMARY KEY,
       caller INT REFERENCES users(id) ON DELETE CASCADE,

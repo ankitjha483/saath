@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -126,6 +126,7 @@ button{cursor:pointer}
 .msg.me{background:var(--plum);color:#fff;align-self:flex-end;border-bottom-right-radius:6px}
 .msg .meta-row{display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:2px}
 .msg time{font-size:.7rem;opacity:.65}
+.msg img.chatimg{max-width:200px;max-height:240px;border-radius:12px;display:block;margin-bottom:4px;cursor:pointer}
 .tick{font-size:.75rem;opacity:.75;line-height:1}
 .tick.read{color:#7FE3FF;opacity:1}
 .sysnote{align-self:center;font-size:.85rem;color:var(--muted);text-align:center;max-width:32ch}
@@ -378,6 +379,8 @@ button{cursor:pointer}
     </div>
     <div class="msgs" id="msgs" aria-live="polite"></div>
     <form class="composer" id="composer">
+      <button type="button" class="backbtn" id="attachBtn" aria-label="Send a photo" style="flex:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1 12 20.5a5 5 0 0 1-7-7l9-9a3.3 3.3 0 0 1 4.7 4.7l-9 9a1.7 1.7 0 0 1-2.4-2.4l8.5-8.5"/></svg></button>
+      <input type="file" id="chatPhotoInput" accept="image/jpeg,image/png,image/webp" hidden>
       <input id="msgInput" placeholder="Type a message" aria-label="Message" autocomplete="off" maxlength="1000">
       <button class="primary" type="submit">Send</button>
     </form>
@@ -951,7 +954,11 @@ function addMsg(m) {
   const div = document.createElement("div");
   div.className = "msg " + (mine ? "me" : "them");
   if (m.id) div.dataset.id = m.id;
-  div.innerHTML = `${esc(m.text)}<div class="meta-row"><time>${timeText(m.created_at)}</time>${mine ? tickFor(m) : ""}</div>`;
+  const imgHtml = m.image_url ? `<img class="chatimg" src="${String(m.image_url).replace(/"/g,'&quot;')}" alt="photo" loading="lazy">` : "";
+  const txtHtml = m.text ? esc(m.text) : "";
+  div.innerHTML = `${imgHtml}${txtHtml}<div class="meta-row"><time>${timeText(m.created_at)}</time>${mine ? tickFor(m) : ""}</div>`;
+  const im = div.querySelector(".chatimg");
+  if (im) im.onclick = () => window.open(m.image_url, "_blank");
   $("#msgs").appendChild(div);
   $("#msgs").scrollTop = $("#msgs").scrollHeight;
 }
@@ -974,6 +981,26 @@ async function openChat(person) {
 }
 
 $("#backBtn").onclick = () => showScreen("matches");
+
+$("#attachBtn").onclick = () => $("#chatPhotoInput").click();
+$("#chatPhotoInput").onchange = async () => {
+  const file = $("#chatPhotoInput").files[0];
+  if (!file || !activeChat) return;
+  $("#chatPhotoInput").value = "";
+  toast("Sending photo...");
+  try {
+    const form = new FormData();
+    form.append("photo", file);
+    const res = await fetch("/api/chat-image", { method: "POST", headers: { Authorization: "Bearer " + token }, body: form });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Upload failed");
+    if (!socket || !socket.connected) { toast("Not connected"); return; }
+    socket.emit("send_message", { to_user: activeChat.id, image_url: data.image_url }, reply => {
+      if (reply && reply.ok) addMsg(reply.message);
+      else toast((reply && reply.error) || "Not sent");
+    });
+  } catch (err) { toast(err.message); }
+};
 
 $("#msgInput").addEventListener("input", () => {
   sendTyping(true);

@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot saath-v45-metaai -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -191,9 +191,17 @@ button{cursor:pointer}
 .msg .gname{display:block;font-size:.72rem;color:var(--plum);font-weight:600;margin-bottom:2px}
 
 /* help bot */
-.helpfab{position:fixed;right:16px;bottom:78px;z-index:7;background:var(--plum);color:#fff;border:0;width:54px;height:54px;border-radius:50%;box-shadow:0 8px 20px -6px rgba(15,94,87,.5);display:grid;place-items:center;cursor:pointer}
-.helpfab svg{width:26px;height:26px}
+/* Meta-AI-style floating assistant button */
+.helpfab{position:fixed;right:16px;bottom:84px;z-index:8;border:0;width:58px;height:58px;border-radius:50%;cursor:pointer;padding:0;
+  background:conic-gradient(from 180deg, #2AC3FF, #6B5BFF, #C16BFF, #FF6B9D, #F4845F, #2AC3FF);
+  box-shadow:0 8px 22px -6px rgba(107,91,255,.55);
+  display:grid;place-items:center;animation:aiPulse 3s ease-in-out infinite}
+.helpfab::before{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--surface)}
+.helpfab .aidot{position:relative;z-index:1;width:26px;height:26px;display:grid;place-items:center}
+.helpfab svg{width:24px;height:24px}
 .helpfab[hidden]{display:none}
+@keyframes aiPulse{0%,100%{box-shadow:0 8px 22px -6px rgba(107,91,255,.55)}50%{box-shadow:0 8px 30px -4px rgba(193,107,255,.75)}}
+@media (prefers-reduced-motion:reduce){.helpfab{animation:none}}
 .help-sheet{position:fixed;inset:0;background:rgba(15,94,87,.3);display:none;z-index:9;align-items:flex-end}
 .help-sheet.show{display:flex}
 .help-box{background:var(--surface);width:100%;max-width:480px;margin:0 auto;border-radius:24px 24px 0 0;max-height:82vh;display:flex;flex-direction:column}
@@ -569,15 +577,17 @@ button{cursor:pointer}
     <button class="status-views" id="storyViews" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span id="storyViewsCount">0</span></button>
     <button class="status-del" id="storyDel" hidden>Delete this status</button>
   </div>
-  <button class="helpfab" id="helpFab" hidden aria-label="Help">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3"/><path d="M12 17h.01"/></svg>
+  <button class="helpfab" id="helpFab" hidden aria-label="Saathly AI assistant">
+    <span class="aidot">
+      <svg viewBox="0 0 24 24" fill="none"><defs><linearGradient id="aig" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6B5BFF"/><stop offset="1" stop-color="#FF6B9D"/></linearGradient></defs><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z" fill="url(#aig)"/><path d="M18.5 13l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" fill="url(#aig)"/></svg>
+    </span>
   </button>
   <div class="help-sheet" id="helpSheet">
     <div class="help-box">
       <div class="help-head">
-        <div class="gicon">S</div>
-        <b>Saathly Help</b>
-        <button class="help-close" id="helpClose" aria-label="Close">×</button>
+        <div class="gicon" style="background:conic-gradient(from 180deg,#2AC3FF,#6B5BFF,#C16BFF,#FF6B9D,#F4845F,#2AC3FF)">✨</div>
+        <div><b style="display:block">Saathly AI</b><span class="muted" style="font-size:.8rem">Here to help you</span></div>
+        <button class="help-close" id="helpClose" aria-label="Close" style="margin-left:auto">×</button>
       </div>
       <div class="help-msgs" id="helpMsgs"></div>
       <div class="help-qs" id="helpQs"></div>
@@ -1986,7 +1996,7 @@ function helpAdd(text, me) {
 
 function openHelp() {
   $("#helpMsgs").innerHTML = "";
-  helpAdd("Hi! I'm the Saathly helper. Tap a question below and I'll help you. \ud83d\udc4b", false);
+  helpAdd("Hi! I'm Saathly AI \u2728 Tap a question below and I'll help you out.", false);
   const qs = $("#helpQs");
   qs.innerHTML = HELP_FAQ.map((f, i) => `<button class="help-q" data-i="${i}">${esc(f.q)}</button>`).join("");
   qs.querySelectorAll(".help-q").forEach(b => b.onclick = () => {

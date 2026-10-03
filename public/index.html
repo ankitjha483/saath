@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -189,6 +189,22 @@ button{cursor:pointer}
 .member-pick input{width:18px;height:18px;accent-color:var(--plum)}
 .member-pick .mini{width:40px;height:40px}
 .msg .gname{display:block;font-size:.72rem;color:var(--plum);font-weight:600;margin-bottom:2px}
+
+/* help bot */
+.helpfab{position:fixed;right:16px;bottom:78px;z-index:7;background:var(--plum);color:#fff;border:0;width:54px;height:54px;border-radius:50%;box-shadow:0 8px 20px -6px rgba(15,94,87,.5);display:grid;place-items:center;cursor:pointer}
+.helpfab svg{width:26px;height:26px}
+.helpfab[hidden]{display:none}
+.help-sheet{position:fixed;inset:0;background:rgba(15,94,87,.3);display:none;z-index:9;align-items:flex-end}
+.help-sheet.show{display:flex}
+.help-box{background:var(--surface);width:100%;max-width:480px;margin:0 auto;border-radius:24px 24px 0 0;max-height:82vh;display:flex;flex-direction:column}
+.help-head{display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid var(--line)}
+.help-head .gicon{width:40px;height:40px;font-size:1rem}
+.help-head b{flex:1}
+.help-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.help-msgs .msg{max-width:85%}
+.help-qs{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.help-q{background:var(--chip);border:0;border-radius:999px;padding:8px 14px;font-size:.88rem;cursor:pointer;text-align:left}
+.help-close{background:var(--chip);border:0;width:34px;height:34px;border-radius:50%;cursor:pointer}
 
 /* appearance */
 .accent-dot{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0}
@@ -553,6 +569,20 @@ button{cursor:pointer}
     <button class="status-views" id="storyViews" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span id="storyViewsCount">0</span></button>
     <button class="status-del" id="storyDel" hidden>Delete this status</button>
   </div>
+  <button class="helpfab" id="helpFab" hidden aria-label="Help">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3"/><path d="M12 17h.01"/></svg>
+  </button>
+  <div class="help-sheet" id="helpSheet">
+    <div class="help-box">
+      <div class="help-head">
+        <div class="gicon">S</div>
+        <b>Saathly Help</b>
+        <button class="help-close" id="helpClose" aria-label="Close">×</button>
+      </div>
+      <div class="help-msgs" id="helpMsgs"></div>
+      <div class="help-qs" id="helpQs"></div>
+    </div>
+  </div>
   <div class="toast" id="toast" role="status"></div>
 </main>
 
@@ -758,6 +788,7 @@ function logout() {
   if (socket) { socket.disconnect(); socket = null; }
   try { localStorage.removeItem("saath_token"); } catch (e) {}
   $("#tabs").hidden = true;
+  $("#helpFab").hidden = true;
   $("#hello").textContent = "";
   showScreen("auth");
 }
@@ -1931,6 +1962,45 @@ document.addEventListener("click", e => {
 
 applyTheme();
 
+// ================== HELP BOT (free, offline FAQ) ==================
+const HELP_FAQ = [
+  { q: "How do I start a chat?", a: "Go to Discover and connect with people. When you both connect, open the Matches tab and tap their name to start chatting." },
+  { q: "How do I make a voice or video call?", a: "Open a chat, then tap the phone icon for a voice call or the video icon for a video call. Calls work with your connections." },
+  { q: "How do I post a status?", a: "Go to the Status tab and tap \"Add to my status\". You can share text or a photo, and it disappears after 24 hours." },
+  { q: "How do I create a group?", a: "Open the Groups tab, tap \"New group\", give it a name, and pick people from your connections." },
+  { q: "How do I block or report someone?", a: "Open a chat with them, tap the \u22ee menu at the top, and choose Block or Report." },
+  { q: "How do I change my photo or profile?", a: "Go to the Profile tab, tap \"Add / change photo\", or tap \"Edit profile\" to update your details." },
+  { q: "How do I change the theme/colors?", a: "Go to Profile > Appearance, and choose Light/Dark mode and your favourite accent color." },
+  { q: "How do I delete my account?", a: "Go to the Profile tab and tap \"Delete my account\" at the bottom. This removes all your data permanently." },
+  { q: "I forgot my password", a: "On the login screen, tap \"Forgot password?\", enter your email, and you'll get a code to set a new password." },
+  { q: "Is Saathly free?", a: "Yes, Saathly is completely free. It's a personal learning project." }
+];
+
+function helpAdd(text, me) {
+  const d = document.createElement("div");
+  d.className = "msg " + (me ? "me" : "them");
+  d.textContent = text;
+  $("#helpMsgs").appendChild(d);
+  $("#helpMsgs").scrollTop = $("#helpMsgs").scrollHeight;
+}
+
+function openHelp() {
+  $("#helpMsgs").innerHTML = "";
+  helpAdd("Hi! I'm the Saathly helper. Tap a question below and I'll help you. \ud83d\udc4b", false);
+  const qs = $("#helpQs");
+  qs.innerHTML = HELP_FAQ.map((f, i) => `<button class="help-q" data-i="${i}">${esc(f.q)}</button>`).join("");
+  qs.querySelectorAll(".help-q").forEach(b => b.onclick = () => {
+    const f = HELP_FAQ[+b.dataset.i];
+    helpAdd(f.q, true);
+    setTimeout(() => helpAdd(f.a, false), 300);
+  });
+  $("#helpSheet").classList.add("show");
+}
+
+$("#helpFab").onclick = openHelp;
+$("#helpClose").onclick = () => $("#helpSheet").classList.remove("show");
+$("#helpSheet").onclick = e => { if (e.target.id === "helpSheet") $("#helpSheet").classList.remove("show"); };
+
 // ================== START ==================
 let myProfile = null;
 
@@ -2009,6 +2079,7 @@ function startApp() {
   $("#hello").textContent = user.name ? "Hi, " + user.name : "";
   $("#profileInfo").textContent = user.name ? `Logged in as ${user.name} (user id ${user.id}).` : "";
   $("#tabs").hidden = false;
+  $("#helpFab").hidden = false;
   connectSocket();
   loadMatches();
   refreshUnread();

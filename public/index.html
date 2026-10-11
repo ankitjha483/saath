@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot saath-v45-metaai saath-v46-chatbox -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot saath-v45-metaai saath-v46-chatbox saath-v47-premium saath-v49-wachatlist -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,7 +101,32 @@ button{cursor:pointer}
 /* lists */
 .scroll{flex:1;overflow-y:auto;padding:8px 20px 20px}
 .section-title{font-size:1.3rem;font-weight:700;margin:4px 0 12px}
-.matchrow{display:flex;gap:12px;align-items:center;padding:10px;border-radius:16px;background:none;border:0;width:100%;text-align:left}
+/* ===== PREMIUM POLISH ===== */
+*{-webkit-tap-highlight-color:transparent}
+button{transition:transform .12s ease, box-shadow .2s ease, background .2s ease, opacity .2s ease}
+.primary{box-shadow:0 6px 16px -6px rgba(15,94,87,.5)}
+.primary:hover{transform:translateY(-1px)}
+.primary:active{transform:translateY(0) scale(.98)}
+.msg{box-shadow:0 2px 8px -4px rgba(0,0,0,.18);animation:bubbleIn .22s ease both}
+@keyframes bubbleIn{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
+.screen.active{animation:screenIn .28s ease both}
+@keyframes screenIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+input:focus,select:focus,textarea:focus{border-color:var(--plum);box-shadow:0 0 0 3px rgba(20,163,143,.18);outline:none}
+.tab.active svg{transform:scale(1.12);transition:transform .2s ease}
+
+/* ===== WHATSAPP-STYLE CHAT LIST ===== */
+.matchrow{display:flex;gap:14px;align-items:center;padding:11px 8px;border-radius:14px;background:none;border:0;width:100%;text-align:left;cursor:pointer;transition:background .15s ease}
+.matchrow + .matchrow{border-top:1px solid var(--line)}
+.matchrow .mini{width:52px;height:52px;flex:none;box-shadow:0 2px 8px -3px rgba(15,94,87,.3)}
+.matchrow .t{flex:1;min-width:0}
+.matchrow .toprow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.matchrow .toprow b{font-size:1.02rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.matchrow .time{font-size:.72rem;color:var(--muted);flex:none}
+.matchrow .time.unreadtime{color:var(--leaf);font-weight:600}
+.matchrow .botrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:3px}
+.matchrow .preview{font-size:.88rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;display:flex;align-items:center;gap:5px}
+.matchrow .preview .onlinedot{flex:none}
+.wa-badge{background:var(--leaf);color:#fff;border-radius:999px;min-width:20px;height:20px;line-height:20px;text-align:center;font-size:.72rem;font-weight:700;padding:0 6px;flex:none}
 .matchrow:hover{background:var(--chip)}
 .mini{width:56px;height:56px;border-radius:50%;overflow:hidden;flex:none}
 .mini svg{width:100%;height:100%;display:block}
@@ -934,6 +959,17 @@ async function refreshUnread() {
   } catch (e) {}
 }
 
+function chatTime(iso) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso), now = new Date();
+    if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const y = new Date(now); y.setDate(now.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return "Yesterday";
+    return d.toLocaleDateString([], { day: "numeric", month: "short" });
+  } catch (e) { return ""; }
+}
+
 async function loadMatches() {
   const list = $("#matchList");
   list.innerHTML = `<p class="muted">Loading...</p>`;
@@ -945,11 +981,24 @@ async function loadMatches() {
     list.innerHTML = matches.map(m => {
       const u = Number(m.unread_count) || 0;
       totalUnread += u;
-      const badge = u > 0 ? `<span class="unread-badge">${u}</span>` : "";
-      return `<button class="matchrow" data-name="${esc(m.name)}"><div class="mini">${avatar(m)}</div><div class="t"><b>${esc(m.name)}, ${esc(m.age)}</b><span class="muted" id="pres-${m.id}">${esc(m.city || "")}</span></div>${badge}</button>`;
+      const myId = me().id;
+      // last message preview
+      let preview = "";
+      if (m.last_image && !m.last_text) preview = "\ud83d\udcf7 Photo";
+      else if (m.last_text) preview = (m.last_from === myId ? "You: " : "") + m.last_text;
+      else preview = "Tap to say hi \ud83d\udc4b";
+      const time = chatTime(m.last_msg_at);
+      const badge = u > 0 ? `<span class="wa-badge">${u > 99 ? "99+" : u}</span>` : "";
+      return `<button class="matchrow" data-name="${esc(m.name)}">
+        <div class="mini">${avatar(m)}</div>
+        <div class="t">
+          <div class="toprow"><b>${esc(m.name)}</b><span class="time ${u>0?"unreadtime":""}">${esc(time)}</span></div>
+          <div class="botrow"><span class="preview" id="pres-${m.id}">${esc(preview)}</span>${badge}</div>
+        </div>
+      </button>`;
     }).join("");
     updateMatchesBadge(totalUnread);
-    // har match ka online status poochho
+    // online status -> show a green dot in preview line if online
     matches.forEach(m => {
       if (!socket || !socket.connected) return;
       socket.emit("presence:check", { user_id: m.id }, res => {

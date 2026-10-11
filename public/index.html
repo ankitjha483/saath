@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot saath-v45-metaai saath-v46-chatbox saath-v47-premium saath-v49-wachatlist -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot saath-v45-metaai saath-v46-chatbox saath-v47-premium saath-v49-wachatlist saath-v50-settings -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -293,6 +293,25 @@ input:focus,select:focus,textarea:focus{border-color:var(--plum);box-shadow:0 0 
 .uploadbtn[disabled]{opacity:.6}
 .dangerbtn{background:none;border:1px solid var(--rose);color:var(--rose);border-radius:999px;padding:10px 20px;width:100%;font-weight:600;margin-top:12px}
 .privacy-note{background:var(--chip);border-radius:16px;padding:14px 16px;font-size:.88rem;color:var(--muted);margin-top:20px;line-height:1.5}
+/* ===== WHATSAPP-STYLE SETTINGS ===== */
+.set-header{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 0 22px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.set-header .photo-big{width:96px;height:96px}
+.set-name{font-size:1.4rem;font-weight:700}
+.set-sub{color:var(--muted);font-size:.9rem}
+.set-group{background:var(--chip);border-radius:16px;margin:12px 0;overflow:hidden}
+.set-row{display:flex;align-items:center;gap:14px;padding:14px 16px;width:100%;background:none;border:0;text-align:left;cursor:pointer;transition:background .15s ease}
+.set-row + .set-row{border-top:1px solid var(--line)}
+.set-row:hover{background:var(--line)}
+.set-row .ic{width:38px;height:38px;border-radius:50%;background:var(--plum);color:#fff;display:grid;place-items:center;flex:none}
+.set-row .ic svg{width:20px;height:20px}
+.set-row .lbl{flex:1}
+.set-row .lbl b{display:block;font-weight:600}
+.set-row .lbl span{color:var(--muted);font-size:.84rem}
+.set-row .chev{color:var(--muted)}
+.set-panel{margin:4px 0 8px;padding:0 4px}
+.set-panel[hidden]{display:none}
+.set-logout{background:none;border:1px solid var(--line);border-radius:14px;padding:13px;width:100%;font-weight:600;margin-top:8px}
+.set-delete{background:none;border:0;color:var(--rose);font-size:.85rem;text-decoration:underline;cursor:pointer;display:block;margin:16px auto;}
 
 /* safety sheet */
 .callbtn-head{margin-left:auto;background:var(--chip);border:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--plum)}
@@ -514,51 +533,87 @@ input:focus,select:focus,textarea:focus{border-color:var(--plum);box-shadow:0 0 
   <!-- PROFILE -->
   <section class="screen" id="screen-profile">
     <div class="scroll">
-      <h2 class="section-title">Your profile</h2>
-      <div class="photowrap">
+      <h2 class="section-title">Settings</h2>
+
+      <div class="set-header">
         <div class="photo-big" id="myPhoto"></div>
         <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" hidden>
-        <button class="uploadbtn" id="uploadPhotoBtn">Add / change photo</button>
-        <div class="muted" style="font-size:.82rem;text-align:center;max-width:34ch">Your photo is shown on your profile to people you’re matched with or discovering. You can remove it anytime.</div>
+        <div class="set-name" id="setName"></div>
+        <div class="set-sub" id="setSub"></div>
+        <button class="uploadbtn" id="uploadPhotoBtn" style="margin-top:4px">Change photo</button>
       </div>
-      <p id="profileInfo" class="muted"></p>
-      <button class="uploadbtn" id="editToggleBtn" style="width:100%">Edit profile</button>
-      <form id="editForm" hidden style="margin-top:14px">
-        <div class="field"><label for="eName">Name</label><input id="eName" maxlength="50"></div>
-        <div class="field"><label for="eCity">City</label><input id="eCity" maxlength="50" placeholder="e.g. Gurugram"></div>
-        <div class="field"><label for="eJob">Work / studies</label><input id="eJob" maxlength="100" placeholder="e.g. Product analyst"></div>
-        <div class="field"><label for="eLang">Languages</label><input id="eLang" maxlength="100" placeholder="e.g. Hindi, English"></div>
-        <div class="field"><label for="eQ">Prompt (a question about you)</label><input id="eQ" maxlength="100" placeholder="e.g. A perfect Sunday looks like"></div>
-        <div class="field"><label for="eA">Your answer</label><input id="eA" maxlength="200" placeholder="e.g. Chai, a good book, and a long walk"></div>
-        <p class="okmsg" id="editMsg"></p>
-        <button class="primary" type="submit" id="saveProfileBtn" style="width:100%">Save profile</button>
-      </form>
-      <button class="uploadbtn" id="inviteBtn" style="width:100%;margin-top:6px">Invite friends to Saathly</button>
-      <div class="note" style="margin-top:20px" id="appearanceBox">
-        <h3 style="font-size:1.05rem;margin-bottom:8px">Appearance</h3>
-        <div style="margin-bottom:10px">
-          <div class="muted" style="font-size:.85rem;margin-bottom:6px">Mode</div>
-          <div class="seg" id="modeSeg">
-            <button data-mode="light" type="button">Light</button>
-            <button data-mode="dark" type="button">Dark</button>
+
+      <div class="set-group">
+        <button class="set-row" id="rowAccount">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></span>
+          <span class="lbl"><b>Account</b><span>Edit your name, city, bio</span></span>
+          <span class="chev">›</span>
+        </button>
+        <button class="set-row" id="rowAppearance">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18 3 3 0 0 0 0-6 2 2 0 0 1 0-4 3 3 0 0 0 0-8z"/></svg></span>
+          <span class="lbl"><b>Appearance</b><span>Theme and colors</span></span>
+          <span class="chev">›</span>
+        </button>
+        <button class="set-row" id="rowHelp">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3M12 17h.01" stroke-linecap="round"/></svg></span>
+          <span class="lbl"><b>Help</b><span>Ask Saathly AI</span></span>
+          <span class="chev">›</span>
+        </button>
+        <button class="set-row" id="rowInvite">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg></span>
+          <span class="lbl"><b>Invite friends</b><span>Share Saathly</span></span>
+          <span class="chev">›</span>
+        </button>
+        <button class="set-row" id="rowTerms">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg></span>
+          <span class="lbl"><b>Privacy &amp; Terms</b><span>How your data is used</span></span>
+          <span class="chev">›</span>
+        </button>
+      </div>
+
+      <!-- Account panel (edit form) -->
+      <div class="set-panel" id="panelAccount" hidden>
+        <form id="editForm" style="margin-top:4px">
+          <div class="field"><label for="eName">Name</label><input id="eName" maxlength="50"></div>
+          <div class="field"><label for="eCity">City</label><input id="eCity" maxlength="50" placeholder="e.g. Gurugram"></div>
+          <div class="field"><label for="eJob">Work / studies</label><input id="eJob" maxlength="100" placeholder="e.g. Product analyst"></div>
+          <div class="field"><label for="eLang">Languages</label><input id="eLang" maxlength="100" placeholder="e.g. Hindi, English"></div>
+          <div class="field"><label for="eQ">About / bio</label><input id="eQ" maxlength="100" placeholder="e.g. A perfect Sunday looks like"></div>
+          <div class="field"><label for="eA">Your answer</label><input id="eA" maxlength="200" placeholder="e.g. Chai, a good book, and a long walk"></div>
+          <p class="okmsg" id="editMsg"></p>
+          <button class="primary" type="submit" id="saveProfileBtn" style="width:100%">Save</button>
+        </form>
+      </div>
+
+      <!-- Appearance panel -->
+      <div class="set-panel" id="panelAppearance" hidden>
+        <div class="note" id="appearanceBox">
+          <div style="margin-bottom:10px">
+            <div class="muted" style="font-size:.85rem;margin-bottom:6px">Mode</div>
+            <div class="seg" id="modeSeg">
+              <button data-mode="light" type="button">Light</button>
+              <button data-mode="dark" type="button">Dark</button>
+            </div>
+          </div>
+          <div>
+            <div class="muted" style="font-size:.85rem;margin-bottom:6px">Color</div>
+            <div style="display:flex;gap:10px" id="accentRow">
+              <button type="button" class="accent-dot" data-accent="teal" style="background:#0F5E57" aria-label="Teal"></button>
+              <button type="button" class="accent-dot" data-accent="pink" style="background:#BE3C66" aria-label="Pink"></button>
+              <button type="button" class="accent-dot" data-accent="blue" style="background:#1E5F9E" aria-label="Blue"></button>
+              <button type="button" class="accent-dot" data-accent="purple" style="background:#6B3FA0" aria-label="Purple"></button>
+            </div>
           </div>
         </div>
-        <div>
-          <div class="muted" style="font-size:.85rem;margin-bottom:6px">Color</div>
-          <div style="display:flex;gap:10px" id="accentRow">
-            <button type="button" class="accent-dot" data-accent="teal" style="background:#0F5E57" aria-label="Teal"></button>
-            <button type="button" class="accent-dot" data-accent="pink" style="background:#BE3C66" aria-label="Pink"></button>
-            <button type="button" class="accent-dot" data-accent="blue" style="background:#1E5F9E" aria-label="Blue"></button>
-            <button type="button" class="accent-dot" data-accent="purple" style="background:#6B3FA0" aria-label="Purple"></button>
-          </div>
-        </div>
       </div>
-      <div class="note" style="margin-top:14px">If someone bothers you, use the ⋮ button at the top of a chat to block or report them.</div>
-      <button class="ghostbtn" id="logoutBtn" style="margin-top:12px">Logout</button>
-      <button id="deleteBtn" style="background:none;border:0;color:var(--rose);font-size:.85rem;text-decoration:underline;cursor:pointer;display:block;margin:14px auto 0">Delete my account</button>
+
+      <button class="set-logout" id="logoutBtn">Log out</button>
+      <button class="set-delete" id="deleteBtn">Delete my account</button>
       <div class="privacy-note">
-        <b>Your privacy:</b> Saathly stores only what you provide (name, email, photo, and chats) to run the app. We never show your email to other users, and your password is stored in an unreadable, hashed form. Deleting your account removes all of your data permanently.
+        <b>Your privacy:</b> Saathly stores only what you provide (name, email, photo, and chats) to run the app. Your email is never shown to others, and your password is stored hashed. Deleting your account removes all your data permanently.
       </div>
+      <!-- hidden invite button kept for existing handler -->
+      <button id="inviteBtn" hidden></button>
     </div>
   </section>
 
@@ -2123,8 +2178,30 @@ async function loadMyProfile() {
     myProfile = await api("/api/me");
     $("#myPhoto").innerHTML = avatar(myProfile);
     fillEditForm(myProfile);
+    const sn = document.getElementById("setName"); if (sn) sn.textContent = myProfile.name || "";
+    const ss = document.getElementById("setSub"); if (ss) ss.textContent = [myProfile.city, myProfile.job].filter(Boolean).join(" \u00b7 ") || "Tap Account to add details";
   } catch (e) {}
 }
+
+// settings rows toggle
+function setPanel(which) {
+  ["Account","Appearance"].forEach(n => {
+    const el = document.getElementById("panel"+n);
+    if (el) el.hidden = (n !== which) || el._open;
+  });
+}
+document.addEventListener("click", e => {
+  const ra = e.target.closest("#rowAccount");
+  const rp = e.target.closest("#rowAppearance");
+  const rh = e.target.closest("#rowHelp");
+  const ri = e.target.closest("#rowInvite");
+  const rt = e.target.closest("#rowTerms");
+  if (ra) { const p=$("#panelAccount"); p.hidden=!p.hidden; $("#panelAppearance").hidden=true; if(!p.hidden) $("#eName").focus(); }
+  else if (rp) { const p=$("#panelAppearance"); p.hidden=!p.hidden; $("#panelAccount").hidden=true; }
+  else if (rh) { if (typeof openHelp==="function") openHelp(); }
+  else if (ri) { if (typeof inviteFriends==="function") inviteFriends(); }
+  else if (rt) { window.open("/terms","_blank"); }
+});
 
 $("#editToggleBtn").onclick = () => {
   $("#editForm").hidden = false;
@@ -2147,6 +2224,8 @@ document.addEventListener("submit", async e => {
     myProfile = await api("/api/me", { method: "PUT", body: JSON.stringify(body) });
     $("#editMsg").textContent = "";
     toast("Profile updated");
+    const sn = document.getElementById("setName"); if (sn) sn.textContent = myProfile.name || "";
+    const ss = document.getElementById("setSub"); if (ss) ss.textContent = [myProfile.city, myProfile.job].filter(Boolean).join(" \u00b7 ") || "";
     $("#hello").textContent = myProfile.name ? "Hi, " + myProfile.name : "";
     $("#editForm").hidden = true;
     $("#editToggleBtn").hidden = false;

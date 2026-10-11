@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot saath-v45-metaai saath-v46-chatbox saath-v47-premium saath-v49-wachatlist saath-v50-settings -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot saath-v45-metaai saath-v46-chatbox saath-v47-premium saath-v49-wachatlist saath-v50-settings saath-v51-fwdemoji -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -467,7 +467,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--plum);box-shadow:0 0 
       <button class="menubtn" id="safetyBtn" aria-label="Block or report"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
     </div>
     <div class="msgs" id="msgs" aria-live="polite"></div>
+    <div id="emojiBar" hidden style="display:flex;flex-wrap:wrap;gap:2px;padding:8px 12px;border-top:1px solid var(--line);max-height:130px;overflow-y:auto"></div>
     <form class="composer" id="composer">
+      <button type="button" class="backbtn" id="emojiBtn" aria-label="Emoji" style="flex:none;font-size:1.25rem">🙂</button>
       <button type="button" class="backbtn" id="attachBtn" aria-label="Send a photo" style="flex:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1 12 20.5a5 5 0 0 1-7-7l9-9a3.3 3.3 0 0 1 4.7 4.7l-9 9a1.7 1.7 0 0 1-2.4-2.4l8.5-8.5"/></svg></button>
       <input type="file" id="chatPhotoInput" accept="image/jpeg,image/png,image/webp" hidden>
       <input id="msgInput" placeholder="Type a message" aria-label="Message" autocomplete="off" maxlength="1000">
@@ -1149,6 +1151,44 @@ function renderDeleted(div) {
   div.innerHTML = `This message was deleted<div class="meta-row"></div>`;
 }
 
+// ===== EMOJI PICKER =====
+const EMOJIS = ["😊","😂","😍","😘","😉","😎","🤔","🙄","😭","😅","🤣","🥱","🥰","🤩","😏","🙂","🙃","🙈","🙌","👍","👊","🤝","🙏","💯","🔥","✨","❤️","💛","💚","💙","💜","💔","🎉","🎊","🎁","☕","🍕","🍔","🍻","🎵","⚽","🏆","🌈","☀️","⭐","💪","👀","👋","🤟","😌"];
+function buildEmojiBar() {
+  const bar = document.getElementById("emojiBar");
+  if (!bar || bar._built) return;
+  bar.innerHTML = EMOJIS.map(e => `<button type="button" class="emoji-pick" style="background:none;border:0;font-size:1.5rem;cursor:pointer;padding:3px">${e}</button>`).join("");
+  bar.querySelectorAll(".emoji-pick").forEach(b => b.onclick = () => {
+    const inp = document.getElementById("msgInput");
+    inp.value += b.textContent; inp.focus();
+  });
+  bar._built = true;
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("#emojiBtn")) {
+    buildEmojiBar();
+    const bar = document.getElementById("emojiBar");
+    bar.hidden = !bar.hidden;
+  }
+});
+
+// ===== FORWARD A MESSAGE =====
+function forwardMessage(m) {
+  api("/api/matches").then(matches => {
+    if (!matches.length) { toast("No connections to forward to"); return; }
+    const list = matches.map((mm,i) => `<button class="opt" data-i="${i}" style="text-align:left">${esc(mm.name)}</button>`).join("");
+    openSheet(`<h3 id="sheetTitle">Forward to...</h3><div style="max-height:46vh;overflow-y:auto">${list}</div><button class="cancel" id="fwdCancel">Cancel</button>`);
+    $("#fwdCancel").onclick = closeSheet;
+    document.querySelectorAll("#sheet .opt").forEach(b => b.onclick = () => {
+      const target = matches[+b.dataset.i];
+      closeSheet();
+      if (!socket || !socket.connected) { toast("Not connected"); return; }
+      socket.emit("send_message", { to_user: target.id, text: m.text || "", image_url: m.image_url || null }, reply => {
+        toast(reply && reply.ok ? "Forwarded to " + target.name : ((reply && reply.error) || "Could not forward"));
+      });
+    });
+  }).catch(() => toast("Could not load connections"));
+}
+
 function addMsg(m) {
   const mine = m.from_user === me().id;
   const div = document.createElement("div");
@@ -1163,27 +1203,31 @@ function addMsg(m) {
     div.innerHTML = `${imgHtml}${txtHtml}<div class="meta-row"><time>${timeText(m.created_at)}</time>${mine ? tickFor(m) : ""}</div>`;
     const im = div.querySelector(".chatimg");
     if (im) im.onclick = () => window.open(m.image_url, "_blank");
-    // apne message par long-press / click se delete option
-    if (mine && m.id) {
+    // long-press / right-click / double-click = message menu (Forward for all, Delete for own)
+    if (m.id && (m.text || m.image_url)) {
       let pressTimer = null;
-      const askDelete = () => {
-        openSheet(`<h3 id="sheetTitle">Delete message?</h3><p>This will remove it for both of you.</p>
-          <button class="opt danger" id="delMsgYes">Delete</button>
-          <button class="cancel" id="delMsgNo">Cancel</button>`);
-        $("#delMsgNo").onclick = closeSheet;
-        $("#delMsgYes").onclick = () => {
+      const askMenu = () => {
+        const delBtn = mine ? `<button class="opt danger" id="msgDel">Delete for everyone</button>` : "";
+        openSheet(`<h3 id="sheetTitle">Message</h3>
+          <button class="opt" id="msgFwd">Forward</button>
+          ${delBtn}
+          <button class="cancel" id="msgCancel">Cancel</button>`);
+        $("#msgCancel").onclick = closeSheet;
+        $("#msgFwd").onclick = () => { closeSheet(); forwardMessage(m); };
+        const d = document.getElementById("msgDel");
+        if (d) d.onclick = () => {
           closeSheet();
           if (socket && socket.connected) socket.emit("delete_message", { message_id: m.id }, r => {
             if (!r || !r.ok) toast((r && r.error) || "Could not delete");
           });
         };
       };
-      div.addEventListener("contextmenu", e => { e.preventDefault(); askDelete(); });
-      div.addEventListener("touchstart", () => { pressTimer = setTimeout(askDelete, 550); }, {passive:true});
+      div.addEventListener("contextmenu", e => { e.preventDefault(); askMenu(); });
+      div.addEventListener("touchstart", () => { pressTimer = setTimeout(askMenu, 500); }, {passive:true});
       div.addEventListener("touchend", () => clearTimeout(pressTimer));
       div.addEventListener("touchmove", () => clearTimeout(pressTimer));
       div.style.cursor = "pointer";
-      div.addEventListener("dblclick", askDelete);
+      div.addEventListener("dblclick", askMenu);
     }
   }
   $("#msgs").appendChild(div);
@@ -1204,6 +1248,7 @@ async function openChat(person) {
     const history = await api("/api/messages/" + person.id);
     history.forEach(addMsg);
   } catch (err) { toast(err.message); }
+  const eb = document.getElementById("emojiBar"); if (eb) eb.hidden = true;
   $("#msgInput").focus();
   setTimeout(refreshUnread, 500);
 }

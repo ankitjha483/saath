@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot saath-v45-metaai saath-v46-chatbox saath-v47-premium saath-v49-wachatlist saath-v50-settings saath-v51-fwdemoji saath-v52-fixbug saath-v53-nullfix saath-v54-aibtn saath-v55-onesignal saath-v56-os5fix -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot saath-v45-metaai saath-v46-chatbox saath-v47-premium saath-v49-wachatlist saath-v50-settings saath-v51-fwdemoji saath-v52-fixbug saath-v53-nullfix saath-v54-aibtn saath-v55-onesignal saath-v56-os5fix saath-v57-osretry -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -554,6 +554,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--plum);box-shadow:0 0 
         <button class="set-row" id="rowAppearance">
           <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18 3 3 0 0 0 0-6 2 2 0 0 1 0-4 3 3 0 0 0 0-8z"/></svg></span>
           <span class="lbl"><b>Appearance</b><span>Theme and colors</span></span>
+          <span class="chev">›</span>
+        </button>
+        <button class="set-row" id="rowNotif">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+          <span class="lbl"><b>Turn on notifications</b><span>Get alerts for new messages</span></span>
           <span class="chev">›</span>
         </button>
         <button class="set-row" id="rowHelp">
@@ -2242,9 +2247,11 @@ function setPanel(which) {
 document.addEventListener("click", e => {
   const ra = e.target.closest("#rowAccount");
   const rp = e.target.closest("#rowAppearance");
+  const rn = e.target.closest("#rowNotif");
   const rh = e.target.closest("#rowHelp");
   const ri = e.target.closest("#rowInvite");
   const rt = e.target.closest("#rowTerms");
+  if (rn) { askNotifPermission(); toast("If no popup, enable notifications in phone Settings > Apps > Saathly"); return; }
   if (ra) { const p=$("#panelAccount"); p.hidden=!p.hidden; $("#panelAppearance").hidden=true; if(!p.hidden) $("#eName").focus(); }
   else if (rp) { const p=$("#panelAppearance"); p.hidden=!p.hidden; $("#panelAccount").hidden=true; }
   else if (rh) { if (typeof openHelp==="function") openHelp(); }
@@ -2302,24 +2309,33 @@ $("#photoInput").onchange = async () => {
   $("#photoInput").value = "";
 };
 
-// ===== OneSignal v5 (native app notifications for Redmi/all phones) =====
+// ===== OneSignal v5 (native app notifications) with retry =====
+let _osTries = 0;
 function setupNativePush() {
   try {
-    // OneSignal v5 plugin ka object window.OneSignal par aata hai (native app ke andar).
     const OS = window.OneSignal;
-    if (!OS || !OS.Notifications) return; // browser mein chup raho
+    // OneSignal plugin load hone mein thodा time leta hai; ready na ho to dobara koshish karo
+    if (!OS || !OS.Notifications) {
+      _osTries++;
+      if (_osTries <= 20) setTimeout(setupNativePush, 800); // ~16 sec tak koshish
+      return;
+    }
+    if (window._nativePushInit) { askNotifPermission(); return; }
     OS.initialize("9709b58f-9831-48df-b8e9-acaef84b2ea2");
-    // notification permission maango (popup aayega)
-    OS.Notifications.requestPermission(true).then(function(accepted){
-      console.log("OneSignal permission:", accepted);
-    }).catch(function(){});
-    // is user ko OneSignal se jodo, taaki sahi bande ko notification jaye
-    try {
-      const u = me();
-      if (u && u.id && OS.login) OS.login(String(u.id));
-    } catch(e){}
+    window._nativePushInit = true;
+    try { const u = me(); if (u && u.id && OS.login) OS.login(String(u.id)); } catch(e){}
+    askNotifPermission();
     window._nativePush = true;
   } catch (e) { console.log("native push err", e); }
+}
+
+function askNotifPermission() {
+  try {
+    const OS = window.OneSignal;
+    if (OS && OS.Notifications && OS.Notifications.requestPermission) {
+      OS.Notifications.requestPermission(true).then(function(a){ console.log("OS perm:", a); }).catch(function(){});
+    }
+  } catch(e){}
 }
 
 function startApp() {

@@ -1,0 +1,13 @@
+const fs = require("fs");
+const p = "capacitor.config.json";
+const c = JSON.parse(fs.readFileSync(p, "utf8"));
+c.server = c.server || {};
+c.server.url = "https://saath.aishayarilab.in";
+c.server.cleartext = true;
+c.server.androidScheme = "https";
+c.android = c.android || {};
+c.android.webContentsDebuggingEnabled = true;
+c.android.useLegacyBridge = true;
+fs.writeFileSync(p, JSON.stringify(c, null, 2));
+console.log("config updated:");
+console.log(fs.readFileSync(p, "utf8"));

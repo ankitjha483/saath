@@ -4,6 +4,11 @@
   "webDir": "public",
   "server": {
     "url": "https://saath.aishayarilab.in",
-    "cleartext": true
+    "cleartext": true,
+    "androidScheme": "https"
+  },
+  "android": {
+    "webContentsDebuggingEnabled": true,
+    "useLegacyBridge": true
   }
 }

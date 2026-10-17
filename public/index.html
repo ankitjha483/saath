@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Saathly">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot saath-v45-metaai saath-v46-chatbox saath-v47-premium saath-v49-wachatlist saath-v50-settings saath-v51-fwdemoji saath-v52-fixbug saath-v53-nullfix saath-v54-aibtn saath-v55-onesignal -->
+<!-- saath-v2-chat saath-v4-safety saath-v6-samundar saath-v7-otp saath-v9-call saath-v10-english saath-v11-photo saath-v12-status saath-v13-callhistory saath-v14-notify saath-v15-presence saath-v16-editprofile saath-v17-delete saath-v18-status saath-v19-statusviews saath-v22-pwa saath-v23-invite saath-v24-viewprofile saath-v25-cleanprofile saath-v26-forgot saath-v27-push saath-v30-search saath-v31-feedbackfix saath-v32-rename saath-v33-theme saath-v34-groups saath-v35-chatimg saath-v37-unread saath-v38-delmsg saath-v39-ringtone saath-v40-melody saath-v41-video saath-v42-terms saath-v43-social saath-v44-helpbot saath-v45-metaai saath-v46-chatbox saath-v47-premium saath-v49-wachatlist saath-v50-settings saath-v51-fwdemoji saath-v52-fixbug saath-v53-nullfix saath-v54-aibtn saath-v55-onesignal saath-v56-os5fix -->
 <meta name="theme-color" content="#0F5E57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2302,22 +2302,24 @@ $("#photoInput").onchange = async () => {
   $("#photoInput").value = "";
 };
 
-// ===== OneSignal (native app notifications for Redmi/all phones) =====
+// ===== OneSignal v5 (native app notifications for Redmi/all phones) =====
 function setupNativePush() {
   try {
-    // Ye sirf native app (Capacitor) ke andar chalega. Browser mein chup rahega.
-    if (window.plugins && window.plugins.OneSignal) {
-      const OneSignal = window.plugins.OneSignal;
-      OneSignal.setAppId("9709b58f-9831-48df-b8e9-acaef84b2ea2");
-      OneSignal.promptForPushNotificationsWithUserResponse(function(accepted){});
-      // app ke user ko OneSignal se jodo (taaki sahi bande ko notification jaye)
-      try {
-        const u = me();
-        if (u && u.id) OneSignal.setExternalUserId(String(u.id));
-      } catch(e){}
-      window._nativePush = true;
-    }
-  } catch (e) {}
+    // OneSignal v5 plugin ka object window.OneSignal par aata hai (native app ke andar).
+    const OS = window.OneSignal;
+    if (!OS || !OS.Notifications) return; // browser mein chup raho
+    OS.initialize("9709b58f-9831-48df-b8e9-acaef84b2ea2");
+    // notification permission maango (popup aayega)
+    OS.Notifications.requestPermission(true).then(function(accepted){
+      console.log("OneSignal permission:", accepted);
+    }).catch(function(){});
+    // is user ko OneSignal se jodo, taaki sahi bande ko notification jaye
+    try {
+      const u = me();
+      if (u && u.id && OS.login) OS.login(String(u.id));
+    } catch(e){}
+    window._nativePush = true;
+  } catch (e) { console.log("native push err", e); }
 }
 
 function startApp() {

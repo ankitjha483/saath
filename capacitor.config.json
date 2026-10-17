@@ -1,5 +1,9 @@
 {
   "appId": "in.aishayarilab.saath",
   "appName": "Saathly",
-  "webDir": "public"
+  "webDir": "public",
+  "server": {
+    "url": "https://saath.aishayarilab.in",
+    "cleartext": true
+  }
 }

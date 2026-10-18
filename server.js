@@ -125,6 +125,22 @@ async function sendPush(userId, payload) {
   } catch (err) { console.error("sendPush:", err); }
 }
 
+// ---------- EXPO PUSH (native app notifications) ----------
+async function sendExpoPush(userId, payload) {
+  try {
+    const subs = await db.query("SELECT expo_token FROM push_subs WHERE user_id = $1 AND expo_token IS NOT NULL", [userId]);
+    const messages = subs.rows
+      .filter(s => s.expo_token && String(s.expo_token).startsWith("ExponentPushToken"))
+      .map(s => ({ to: s.expo_token, sound: "default", title: payload.title, body: payload.body, data: { url: payload.url || "/" } }));
+    if (!messages.length) return;
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(messages),
+    });
+  } catch (err) { console.error("sendExpoPush:", err); }
+}
+
 app.use(express.static("public"));
 
 // /download ko download.html par bhejo (saaf link ke liye)
@@ -357,6 +373,20 @@ if (SELF_URL) {
   }, 14 * 60 * 1000);
   console.log("Self-ping enabled:", SELF_URL);
 }
+
+app.post("/api/push-token", authCheck, async (req, res) => {
+  const t = String(req.body.expo_token || "").trim();
+  if (!t) return res.status(400).json({ error: "No token" });
+  try {
+    await db.query(
+      `INSERT INTO push_subs (user_id, endpoint, p256dh, auth, expo_token)
+       VALUES ($1, $2, 'expo', 'expo', $3)
+       ON CONFLICT (endpoint) DO UPDATE SET user_id = EXCLUDED.user_id, expo_token = EXCLUDED.expo_token`,
+      [req.user.id, "expo:" + t, t]
+    );
+    res.json({ ok: true });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Could not save token" }); }
+});
 
 app.get("/api/push/key", (req, res) => {
   res.json({ key: process.env.VAPID_PUBLIC || "", enabled: pushEnabled });
@@ -1162,6 +1192,11 @@ io.on("connection", async (socket) => {
         body: text.slice(0, 120),
         url: "/"
       });
+      sendExpoPush(to_user, {
+        title: socket.user.name || "New message",
+        body: (text || "Photo").slice(0, 120),
+        url: "/"
+      });
 
       // Demo profile ho to 1.5 second baad auto-reply
       if (await isDemoUser(to_user)) {
@@ -1275,6 +1310,7 @@ async function setupDatabase() {
       auth TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
     );
+    ALTER TABLE push_subs ADD COLUMN IF NOT EXISTS expo_token TEXT;
     CREATE TABLE IF NOT EXISTS groups (
       id SERIAL PRIMARY KEY,
       name VARCHAR(80) NOT NULL,

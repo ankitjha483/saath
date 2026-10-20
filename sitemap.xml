@@ -7,6 +7,12 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://saath.aishayarilab.in/about</loc>
+    <lastmod>2026-10-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://saath.aishayarilab.in/terms</loc>
     <lastmod>2026-10-20</lastmod>
     <changefreq>yearly</changefreq>

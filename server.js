@@ -12,7 +12,7 @@ const multer = require("multer");
 const webpush = require("web-push");
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "12mb" }));
 const server = http.createServer(app);
 const io = new Server(server);
 
@@ -576,10 +576,21 @@ app.delete("/api/me", authCheck, async (req, res) => {
 });
 
 // ---------- CHAT IMAGE UPLOAD ----------
+// SAATHLY_B64_UPLOAD: app photo ko base64 me bhejta hai (JSON), use file jaisa bana do
+function b64File(req) {
+  try {
+    if (req.file || !req.body || !req.body.photo_base64) return;
+    const b64 = String(req.body.photo_base64).replace(/^data:[^;]+;base64,/, "");
+    const buffer = Buffer.from(b64, "base64");
+    if (!buffer.length || buffer.length > 10 * 1024 * 1024) return;
+    req.file = { mimetype: String(req.body.photo_mime || "image/jpeg"), buffer, size: buffer.length };
+  } catch (e) {}
+}
+
 app.post("/api/chat-image", authCheck, (req, res) => {
   if (!photosEnabled) return res.status(503).json({ error: "Image upload is not set up on the server yet" });
   upload.single("photo")(req, res, async (err) => {
-    if (err) return res.status(400).json({ error: err.message });
+    if (err) return res.status(400).json({ error: err.message }); b64File(req);
     if (!req.file) return res.status(400).json({ error: "No image received" });
     try {
       const dataUri = "data:" + req.file.mimetype + ";base64," + req.file.buffer.toString("base64");
@@ -601,7 +612,7 @@ app.post("/api/photo", authCheck, (req, res) => {
     return res.status(503).json({ error: "Photo upload is not set up on the server yet" });
   }
   upload.single("photo")(req, res, async (err) => {
-    if (err) return res.status(400).json({ error: err.message });
+    if (err) return res.status(400).json({ error: err.message }); b64File(req);
     if (!req.file) return res.status(400).json({ error: "No photo received" });
     try {
       const dataUri = "data:" + req.file.mimetype + ";base64," + req.file.buffer.toString("base64");
@@ -622,7 +633,7 @@ app.post("/api/photo", authCheck, (req, res) => {
 // Apna status daalo (text ya photo). Photo ke liye Cloudinary wahi reuse.
 app.post("/api/status", authCheck, (req, res) => {
   upload.single("photo")(req, res, async (err) => {
-    if (err) return res.status(400).json({ error: err.message });
+    if (err) return res.status(400).json({ error: err.message }); b64File(req);
     const text = (req.body.text || "").trim();
     if (!text && !req.file) return res.status(400).json({ error: "Add some text or a photo" });
     if (text.length > 300) return res.status(400).json({ error: "Status text is too long" });

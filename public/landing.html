@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Saathly · Find someone worth talking to</title>
+<meta name="description" content="Saathly turns matches into real conversations. Chat, voice and video calls, stories and groups in one simple app. Free for Android.">
+<meta name="theme-color" content="#1E0A14">
+<meta property="og:title" content="Saathly · Find someone worth talking to">
+<meta property="og:description" content="Chat, voice and video calls, stories and groups. All in one app. Free for Android.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--plum:#1E0A14;--plum2:#2E1220;--rasp:#E0457A;--rasp2:#C23A64;--gold:#F5A02A;--ink:#21101A;--muted:#6B5560;--paper:#FFF7FA;--line:#F1D9E3;--white:#fff;--glass:rgba(255,255,255,.07);--glassb:rgba(255,255,255,.14)}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font:500 17px/1.6 "Manrope",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:"Bricolage Grotesque","Manrope",system-ui,sans-serif;margin:0;line-height:1.02;letter-spacing:-.025em}
+  a{color:inherit;text-decoration:none}
+  a:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:14px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+  /* ---------- HERO (dark) ---------- */
+  .hero{background:radial-gradient(900px 520px at 78% 30%,rgba(224,69,122,.38),transparent 60%),radial-gradient(600px 400px at 10% 90%,rgba(245,160,42,.16),transparent 60%),var(--plum);color:#fff;overflow:hidden;padding-bottom:90px}
+  nav{display:flex;align-items:center;gap:28px;padding:22px 0}
+  .logo{display:flex;align-items:center;gap:10px;font:800 26px/1 "Bricolage Grotesque",sans-serif}
+  .logo i{font-style:normal;color:var(--gold)}
+  .links{display:flex;gap:26px;margin-left:auto;font-weight:600;font-size:15px;color:rgba(255,255,255,.75)}
+  .links a:hover{color:#fff}
+  .pill{padding:10px 18px;border-radius:999px;border:1.5px solid var(--glassb);font-weight:700;font-size:15px}
+  .pill:hover{background:var(--glass)}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:center;padding-top:40px}
+  .tag{display:inline-flex;align-items:center;gap:8px;padding:7px 14px 7px 8px;border-radius:999px;background:var(--glass);border:1px solid var(--glassb);font-size:14px;font-weight:600;color:rgba(255,255,255,.85)}
+  .tag b{background:var(--gold);color:var(--plum);border-radius:999px;padding:2px 9px;font-size:12px}
+  .hero h1{font-size:clamp(52px,7.4vw,98px);font-weight:800;margin:22px 0 22px}
+  .hero h1 em{font-style:normal;background:linear-gradient(90deg,#FF7AA8,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.lead{font-size:20px;line-height:1.55;color:rgba(255,255,255,.78);max-width:31em;margin:0 0 34px}
+  .cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:12px;padding:17px 26px;border-radius:18px;font:700 17px/1.1 "Manrope",sans-serif;transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
+  .btn:hover{transform:translateY(-2px)}
+  .btn-main{background:linear-gradient(135deg,var(--rasp),var(--rasp2));color:#fff;box-shadow:0 14px 34px -10px rgba(224,69,122,.7)}
+  .btn-main small{display:block;font-size:12.5px;font-weight:600;opacity:.85;margin-top:3px}
+  .btn-glass{background:var(--glass);border:1.5px solid var(--glassb);color:#fff}
+  .meta{display:flex;flex-wrap:wrap;gap:18px;margin-top:26px;font-size:14px;color:rgba(255,255,255,.6)}
+  .meta span::before{content:"✓";color:var(--gold);font-weight:800;margin-right:7px}
+
+  /* phones */
+  .stage{position:relative;height:620px}
+  .phone{position:absolute;width:280px;height:580px;border-radius:46px;background:#0E0509;padding:11px;box-shadow:0 40px 80px -30px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.08) inset}
+  .scr{width:100%;height:100%;border-radius:36px;overflow:hidden;position:relative}
+  .p1{left:4%;top:30px;transform:rotate(-6deg)}
+  .p2{right:2%;top:0;transform:rotate(5deg)}
+  /* chat screen */
+  .chat{background:#FFF5F8;display:flex;flex-direction:column;height:100%;color:var(--ink)}
+  .ch-top{background:#fff;padding:16px 14px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+  .av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;font:700 16px "Bricolage Grotesque",sans-serif;position:relative;flex:none}
+  .av.on::after{content:"";position:absolute;right:-1px;bottom:0;width:11px;height:11px;border-radius:50%;background:#2BB673;border:2px solid #fff}
+  .ch-top b{font:700 15px/1.1 "Bricolage Grotesque",sans-serif;display:block}
+  .ch-top small{color:var(--rasp2);font-size:12px;font-weight:600}
+  .rings{display:flex;gap:9px;padding:10px 12px;background:#fff;border-bottom:1px solid var(--line)}
+  .ring{width:42px;height:42px;border-radius:50%;padding:2px;background:conic-gradient(var(--gold),var(--rasp),var(--gold))}
+  .ring div{width:100%;height:100%;border-radius:50%;border:2px solid #fff;display:grid;place-items:center;color:#fff;font:700 14px "Bricolage Grotesque",sans-serif}
+  .msgs{flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:8px;font-size:13.5px;line-height:1.35}
+  .m{max-width:80%;padding:8px 12px;border-radius:16px}
+  .m.t{background:#fff;border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:5px}
+  .m.y{background:var(--rasp2);color:#fff;align-self:flex-end;border-bottom-right-radius:5px}
+  .m s{display:block;text-decoration:none;font-size:10px;opacity:.7;text-align:right;margin-top:2px}
+  .m s b{color:#8EEBFF}
+  .bar{background:#fff;border-top:1px solid var(--line);padding:10px;display:flex;gap:8px;align-items:center;font-size:12.5px}
+  .bar .in{flex:1;background:#FFF5F8;border:1px solid var(--line);border-radius:20px;padding:8px 12px;color:#B98C9C}
+  .bar .go{background:var(--rasp2);color:#fff;border-radius:20px;padding:8px 13px;font-weight:700}
+  /* call screen */
+  .call{height:100%;background:linear-gradient(180deg,#5A1F3A 0%,#2A0D1B 60%,#14060C 100%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:56px 18px 40px}
+  .call .face{width:120px;height:120px;border-radius:50%;background:var(--gold);display:grid;place-items:center;font:800 50px "Bricolage Grotesque",sans-serif;box-shadow:0 0 0 10px rgba(245,160,42,.18),0 0 0 22px rgba(245,160,42,.08)}
+  .call h3{font-size:28px;margin-top:22px;text-align:center}
+  .call p{margin:6px 0 0;opacity:.75;text-align:center;font-size:14px}
+  .call .acts{display:flex;gap:46px}
+  .call .acts div{text-align:center;font-size:12px;opacity:.9}
+  .call .acts span{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:24px;margin-bottom:8px}
+  .float{position:absolute;z-index:3;background:rgba(255,255,255,.95);color:var(--ink);border-radius:16px;padding:10px 14px;font-size:13.5px;font-weight:700;box-shadow:0 18px 30px -14px rgba(0,0,0,.6);display:flex;align-items:center;gap:8px}
+  .f1{left:-2%;bottom:18px}.f2{right:-2%;top:-14px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#2BB673}
+
+  /* ---------- SECTIONS ---------- */
+  section{padding:110px 0}
+  .head{max-width:720px;margin-bottom:46px}
+  .head h2{font-size:clamp(40px,5.2vw,66px);font-weight:800}
+  .head p{color:var(--muted);font-size:20px;margin:16px 0 0;max-width:34em}
+
+  /* bento */
+  .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:18px}
+  .tile{background:#fff;border:1px solid var(--line);border-radius:30px;padding:30px;position:relative;overflow:hidden}
+  .tile h3{font-size:28px;font-weight:700;margin-bottom:8px}
+  .tile p{margin:0;color:var(--muted);max-width:28em}
+  .t-call{grid-column:span 4;background:var(--plum);color:#fff;border:none;min-height:340px}
+  .t-call p{color:rgba(255,255,255,.72)}
+  .t-chat{grid-column:span 2}
+  .t-story{grid-column:span 2}
+  .t-group{grid-column:span 2}
+  .t-notif{grid-column:span 2;background:linear-gradient(135deg,var(--rasp),var(--rasp2));color:#fff;border:none}
+  .t-notif p{color:rgba(255,255,255,.85)}
+  .t-lang{grid-column:span 3}
+  .t-auto{grid-column:span 3;background:#FFF0D9;border-color:#F7DDB0}
+  .mini-call{position:absolute;right:30px;bottom:30px;display:flex;gap:14px}
+  .mini-call span{width:70px;height:70px;border-radius:50%;display:grid;place-items:center;font-size:28px}
+  .wave{display:flex;gap:5px;align-items:center;margin-top:30px;height:44px}
+  .wave i{width:6px;border-radius:3px;background:var(--gold);opacity:.85}
+  .ticks{margin-top:22px;display:flex;flex-direction:column;gap:8px}
+  .ticks div{align-self:flex-end;background:var(--rasp2);color:#fff;border-radius:14px 14px 4px 14px;padding:8px 12px;font-size:14px}
+  .ticks div b{color:#8EEBFF;margin-left:6px}
+  .ticks div.t{align-self:flex-start;background:#FFF5F8;color:var(--ink);border:1px solid var(--line);border-radius:14px 14px 14px 4px}
+  .story-row{display:flex;gap:10px;margin-top:22px}
+  .story-row .ring{width:54px;height:54px}
+  .eye{margin-top:14px;display:inline-flex;gap:8px;align-items:center;background:#FFF5F8;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700}
+  .stack{display:flex;margin-top:22px}
+  .stack .av{width:44px;height:44px;border:3px solid #fff;margin-left:-10px;font-size:16px}
+  .stack .av:first-child{margin-left:0}
+  .notif{margin-top:22px;background:rgba(255,255,255,.95);color:var(--ink);border-radius:18px;padding:12px 14px;display:flex;gap:10px;align-items:center;font-size:14px}
+  .notif b{display:block;font-size:14px}
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .chip{border:1.5px solid var(--line);border-radius:999px;padding:9px 16px;font-weight:700;font-size:15px}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .sw{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:8px;vertical-align:-2px}
+
+  /* safety (dark) */
+  .dark{background:var(--plum);color:#fff;border-radius:44px;margin:0 16px}
+  .dark .head p{color:rgba(255,255,255,.7)}
+  .safe{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .s{border:1px solid var(--glassb);background:var(--glass);border-radius:26px;padding:26px}
+  .s .ic{font-size:28px;width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.08);margin-bottom:18px}
+  .s h3{font-size:21px;margin-bottom:8px}
+  .s p{margin:0;color:rgba(255,255,255,.68);font-size:15.5px}
+
+  /* steps (real sequence) */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;counter-reset:n}
+  .step{border-top:3px solid var(--ink);padding-top:22px}
+  .step::before{counter-increment:n;content:"0" counter(n);font:800 18px "Bricolage Grotesque",sans-serif;color:var(--rasp2)}
+  .step h3{font-size:26px;margin:10px 0 8px}
+  .step p{margin:0;color:var(--muted)}
+
+  /* faq */
+  .faq{display:grid;grid-template-columns:.8fr 1.2fr;gap:50px}
+  details{border-bottom:1px solid var(--line);padding:6px 0}
+  summary{cursor:pointer;list-style:none;font:700 21px/1.3 "Bricolage Grotesque",sans-serif;padding:16px 0;display:flex;justify-content:space-between;gap:16px}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";font-size:28px;line-height:.9;color:var(--rasp2);transition:transform .2s}
+  details[open] summary::after{transform:rotate(45deg)}
+  details p{margin:0 0 18px;color:var(--muted)}
+
+  /* final */
+  .final{margin:0 16px 16px;border-radius:44px;background:radial-gradient(700px 400px at 50% 0%,rgba(224,69,122,.45),transparent 70%),var(--plum);color:#fff;text-align:center;padding:110px 24px}
+  .final h2{font-size:clamp(46px,7vw,92px);font-weight:800;max-width:12em;margin:0 auto}
+  .final p{color:rgba(255,255,255,.75);font-size:20px;margin:20px auto 34px}
+  .final .cta{justify-content:center}
+  footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding:30px 0 40px;color:var(--muted);font-size:15px}
+  footer a{margin-left:20px;font-weight:700;color:var(--ink)}
+
+  @media (prefers-reduced-motion:no-preference){
+    .p1{animation:in1 1s cubic-bezier(.2,.8,.2,1) both}
+    .p2{animation:in2 1s .12s cubic-bezier(.2,.8,.2,1) both}
+    .float{animation:fade .6s .9s both}
+    .call .face{animation:pulse 2s infinite}
+    @keyframes in1{from{opacity:0;transform:translateY(60px) rotate(-6deg)}to{opacity:1;transform:rotate(-6deg)}}
+    @keyframes in2{from{opacity:0;transform:translateY(80px) rotate(5deg)}to{opacity:1;transform:rotate(5deg)}}
+    @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 10px rgba(245,160,42,.18),0 0 0 22px rgba(245,160,42,.08)}50%{box-shadow:0 0 0 16px rgba(245,160,42,.22),0 0 0 32px rgba(245,160,42,.06)}}
+  }
+  @media (max-width:980px){
+    .links{display:none}
+    .hero-grid{grid-template-columns:1fr}
+    .stage{height:600px;max-width:520px;margin:20px auto 0;width:100%}
+    .bento{grid-template-columns:1fr 1fr}
+    .t-call,.t-lang,.t-auto{grid-column:span 2}
+    .t-chat,.t-story,.t-group,.t-notif{grid-column:span 1}
+    .safe{grid-template-columns:1fr 1fr}
+    .faq{grid-template-columns:1fr;gap:10px}
+  }
+  @media (max-width:640px){
+    nav .pill{display:none}
+    .stage{height:520px}
+    .phone{width:230px;height:480px;border-radius:40px}
+    .scr{border-radius:31px}
+    .p1{left:0}.p2{right:0}
+    .f1{left:0;bottom:6px}.f2{right:0;top:-10px}
+    .bento,.safe,.steps{grid-template-columns:1fr}
+    .t-call,.t-chat,.t-story,.t-group,.t-notif,.t-lang,.t-auto{grid-column:span 1}
+    .t-call{min-height:300px}
+    .mini-call{position:static;margin-top:24px}
+    section{padding:80px 0}
+    .dark,.final{margin:0 10px;border-radius:32px}
+    .final{margin-bottom:10px}
+    .btn{width:100%;justify-content:center}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <nav>
+      <a class="logo" href="/" aria-label="Saathly home">
+        <svg width="38" height="38" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="230" fill="#C23A64"/><defs><clipPath id="h"><path d="M512 830 C 170 610, 150 300, 350 255 C 440 236, 498 290, 512 345 C 526 290, 584 236, 674 255 C 874 300, 854 610, 512 830 Z"/></clipPath></defs><g clip-path="url(#h)"><rect width="1024" height="1024" fill="#fff"/><path d="M0 0 L512 0 L512 330 C 380 450, 650 640, 512 850 L512 1024 L0 1024 Z" fill="#F5A02A"/></g><path d="M512 330 C 380 450, 650 640, 512 850" fill="none" stroke="#C23A64" stroke-width="30" stroke-linecap="round"/></svg>
+        <span>saathly<i>.</i></span>
+      </a>
+      <div class="links"><a href="#features">Features</a><a href="#safety">Safety</a><a href="#faq">FAQ</a></div>
+      <a class="pill" href="/app">Open web app</a>
+    </nav>
+
+    <div class="hero-grid">
+      <div>
+        <span class="tag"><b>New</b> Saathly is now on Android</span>
+        <h1>Find someone worth <em>talking to.</em></h1>
+        <p class="lead">Saathly turns a match into a real conversation. Chat, call, video call and share your day through stories, all in one beautifully simple app.</p>
+        <div class="cta">
+          <a class="btn btn-main" href="/get-app">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.6 9.48l1.84-3.18a.38.38 0 10-.66-.38l-1.86 3.22a11.5 11.5 0 00-9.84 0L5.22 5.92a.38.38 0 10-.66.38L6.4 9.48A10.8 10.8 0 001 18h22a10.8 10.8 0 00-5.4-8.52zM7 15.25a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5zm10 0a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5z"/></svg>
+            <span>Download for Android<small>Free · Installs in a minute</small></span>
+          </a>
+          <a class="btn btn-glass" href="/app">Open in browser</a>
+        </div>
+        <div class="meta"><span>Free to use</span><span>English, Hindi &amp; Hinglish</span><span>On iPhone? Use the web app</span></div>
+      </div>
+
+      <div class="stage" aria-hidden="true">
+        <div class="phone p1"><div class="scr"><div class="chat">
+          <div class="ch-top"><div class="av on" style="background:#F5A02A">M</div><div><b>Manish</b><small>typing…</small></div></div>
+          <div class="rings"><div class="ring"><div style="background:#C23A64">A</div></div><div class="ring"><div style="background:#F5A02A">R</div></div><div class="ring"><div style="background:#7A5363">S</div></div><div class="ring"><div style="background:#E0457A">P</div></div></div>
+          <div class="msgs">
+            <div class="m t">Your profile says chai lover ☕<s>10:41</s></div>
+            <div class="m y">Guilty! Adrak wali, always 😄<s>10:42 <b>✓✓</b></s></div>
+            <div class="m t">Weekend tapri crawl?<s>10:43</s></div>
+            <div class="m y">Deal. Quick video call first? 🎥<s>10:44 <b>✓✓</b></s></div>
+          </div>
+          <div class="bar">📎<div class="in">Message</div><div class="go">Send</div></div>
+        </div></div></div>
+        <div class="phone p2"><div class="scr"><div class="call">
+          <div style="text-align:center"><div class="face">M</div><h3>Manish</h3><p>Incoming video call</p></div>
+          <div class="acts"><div><span style="background:#E5484D">✕</span>Decline</div><div><span style="background:#2BB673">🎥</span>Accept</div></div>
+        </div></div></div>
+        <div class="float f1"><span class="dot"></span>Manish is online</div>
+        <div class="float f2">👁 Your story was seen by 12</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <div class="head">
+      <h2>Everything a good conversation needs.</h2>
+      <p>No jumping between apps. Saathly brings the way you already talk to friends into the place you meet new people.</p>
+    </div>
+    <div class="bento">
+      <div class="tile t-call">
+        <h3>Voice &amp; video calls,<br>full screen.</h3>
+        <p>One tap and you're face to face. Calls ring on your lock screen with a ringtone, even when the app is closed.</p>
+        <div class="wave" aria-hidden="true"><i style="height:30%"></i><i style="height:70%"></i><i style="height:45%"></i><i style="height:95%"></i><i style="height:60%"></i><i style="height:80%"></i><i style="height:35%"></i><i style="height:65%"></i><i style="height:50%"></i><i style="height:90%"></i><i style="height:40%"></i><i style="height:70%"></i></div>
+        <div class="mini-call" aria-hidden="true"><span style="background:#E5484D">✕</span><span style="background:#2BB673">📞</span></div>
+      </div>
+      <div class="tile t-chat">
+        <h3>Chat that feels alive.</h3>
+        <p>Read receipts, typing, online status, photos and unsend.</p>
+        <div class="ticks" aria-hidden="true"><div class="t">So, coffee or chai?</div><div>Chai. Always.<b>✓✓</b></div></div>
+      </div>
+      <div class="tile t-story">
+        <h3>Stories for 24 hours.</h3>
+        <p>Share a photo or a thought, and see exactly who viewed it.</p>
+        <div class="story-row" aria-hidden="true"><div class="ring"><div style="background:#C23A64">A</div></div><div class="ring"><div style="background:#F5A02A">R</div></div><div class="ring"><div style="background:#7A5363">S</div></div></div>
+        <div class="eye">👁 Seen by 12</div>
+      </div>
+      <div class="tile t-group">
+        <h3>Groups.</h3>
+        <p>Bring your matches together and plan the weekend in one chat.</p>
+        <div class="stack" aria-hidden="true"><div class="av" style="background:#C23A64">A</div><div class="av" style="background:#F5A02A">R</div><div class="av" style="background:#7A5363">S</div><div class="av" style="background:#E0457A">+4</div></div>
+      </div>
+      <div class="tile t-notif">
+        <h3>Never miss a moment.</h3>
+        <p>Instant alerts for messages and calls, even when Saathly is closed.</p>
+        <div class="notif" aria-hidden="true"><span style="font-size:22px">💬</span><div><b>Riya</b>Are we still on for Sunday?</div></div>
+      </div>
+      <div class="tile t-lang">
+        <h3>Your language. Your look.</h3>
+        <p>Use the whole app in English, हिंदी or Hinglish, and switch between light, dark and grey themes anytime.</p>
+        <div class="chips" aria-hidden="true"><span class="chip on">English</span><span class="chip">हिंदी</span><span class="chip">Hinglish</span><span class="chip"><span class="sw" style="background:#FFF5F8;border:3px solid #C23A64"></span>Light</span><span class="chip"><span class="sw" style="background:#16101A;border:3px solid #E0567F"></span>Dark</span><span class="chip"><span class="sw" style="background:#EFEFF2;border:3px solid #B23560"></span>Grey</span></div>
+      </div>
+      <div class="tile t-auto">
+        <h3>Always up to date.</h3>
+        <p>New features arrive on their own. No need to download the app again every time we ship something new.</p>
+        <div class="chips" aria-hidden="true"><span class="chip">⚡ Auto updates</span><span class="chip">🗂️ Call history</span><span class="chip">📷 Profile photos</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="safety" class="dark">
+  <div class="wrap">
+    <div class="head">
+      <h2>Safe by design.</h2>
+      <p>Great conversations only happen when you feel comfortable. These protections are built in, not bolted on.</p>
+    </div>
+    <div class="safe">
+      <div class="s"><div class="ic">💞</div><h3>Matches only</h3><p>Nobody can message or call you unless you've both liked each other.</p></div>
+      <div class="s"><div class="ic">🚫</div><h3>Block &amp; report</h3><p>One tap removes someone from your Saathly for good.</p></div>
+      <div class="s"><div class="ic">🔒</div><h3>Private by default</h3><p>Your email is never shown, and your password is stored securely.</p></div>
+      <div class="s"><div class="ic">🗑️</div><h3>Your data, your call</h3><p>Delete your account and all your data goes with it, permanently.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="head"><h2>Up and running in three steps.</h2></div>
+    <div class="steps">
+      <div class="step"><h3>Download</h3><p>Tap <b>Download for Android</b> above. The app file lands on your phone in seconds.</p></div>
+      <div class="step"><h3>Allow the install</h3><p>If your phone asks, allow installs from your browser. You only do this once.</p></div>
+      <div class="step"><h3>Open and say hi</h3><p>Sign up with your email or log in with your existing Saathly account. That's it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" style="padding-top:20px">
+  <div class="wrap faq">
+    <div class="head"><h2>Questions?</h2><p>Quick answers to what people ask most.</p></div>
+    <div>
+      <details><summary>Is Saathly free?</summary><p>Yes. Downloading, matching, chatting and calling are all free.</p></details>
+      <details><summary>Why isn't it on the Play Store?</summary><p>For now, Saathly is downloaded directly from our website. That's why your phone asks once for permission to install. It's a normal step for apps installed outside the Play Store.</p></details>
+      <details><summary>Does it work on iPhone?</summary><p>The app is Android only for now. On iPhone, open the Saathly web app in Safari. Chat, calls and stories all work there too.</p></details>
+      <details><summary>Can I use my web account in the app?</summary><p>Absolutely. Log in with the same email and password, and all your chats, matches and photos will be right there.</p></details>
+      <details><summary>How much data do calls use?</summary><p>Voice calls work fine on regular mobile data. For video calls, Wi-Fi or a strong 4G/5G connection gives the best quality.</p></details>
+    </div>
+  </div>
+</section>
+
+<div class="final">
+  <h2>Your next great conversation starts here.</h2>
+  <p>Download Saathly and say hi to someone new today.</p>
+  <div class="cta">
+    <a class="btn btn-main" href="/get-app"><span>Download for Android<small>Free · Installs in a minute</small></span></a>
+    <a class="btn btn-glass" href="/app">Open in browser</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <footer>
+    <span>© Saathly. Meet, talk, belong.</span>
+    <span><a href="/terms">Privacy &amp; Terms</a><a href="/app">Web app</a></span>
+  </footer>
+</div>
+</body>
+</html>

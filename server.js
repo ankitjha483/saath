@@ -157,6 +157,12 @@ async function sendExpoPush(userId, payload) {
   } catch (err) { console.error("sendExpoPush:", err); }
 }
 
+// SAATHLY_ROUTES: "/" = main website, "/app" = Saathly web app
+app.get("/", (req, res) => res.sendFile(require("path").join(__dirname, "public", "landing.html")));
+app.get("/app", (req, res) => {
+  if (req.path.endsWith("/")) return res.redirect(301, "/app");
+  res.sendFile(require("path").join(__dirname, "public", "index.html"));
+});
 app.use(express.static("public"));
 
 // /download ko download.html par bhejo (saaf link ke liye)
@@ -179,7 +185,7 @@ app.get("/get-app", (req, res) => {
     '</div><script>if(/android/i.test(navigator.userAgent)){setTimeout(function(){location.href=document.getElementById("open").href},400)}</script></body></html>');
 });
 
-app.get("/download", (req, res) => res.sendFile(path.join(__dirname, "public", "download.html")));
+app.get("/download", (req, res) => res.sendFile(path.join(__dirname, "public", "landing.html")));
 app.get("/terms", (req, res) => res.sendFile(path.join(__dirname, "public", "terms.html")));
 
 // ---------- EMAIL BHEJNA (Brevo) ----------

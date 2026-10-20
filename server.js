@@ -131,7 +131,7 @@ async function sendExpoPush(userId, payload) {
     const subs = await db.query("SELECT expo_token FROM push_subs WHERE user_id = $1 AND expo_token IS NOT NULL", [userId]);
     const messages = subs.rows
       .filter(s => s.expo_token && String(s.expo_token).startsWith("ExponentPushToken"))
-      .map(s => ({ to: s.expo_token, sound: "default", title: payload.title, body: payload.body, data: { url: payload.url || "/" } }));
+      .map(s => ({ to: s.expo_token, sound: "default", priority: "high", channelId: "default", ttl: payload.ttl, title: payload.title, body: payload.body, data: Object.assign({ url: payload.url || "/" }, payload.data || {}) }));
     if (!messages.length) return;
     await fetch("https://exp.host/--/api/v2/push/send", {
       method: "POST",
@@ -999,9 +999,26 @@ async function notifyMatches(userId, event, payload) {
   } catch (err) { console.error(err); }
 }
 
+// SAATHLY_PENDING_CALLS: jab callee ka app band ho, call 45 sec tak yaad rakho
+const pendingCalls = new Map();
+
 io.on("connection", async (socket) => {
   // Har user ka apna "kamra", taaki message sirf usi tak jaye
   socket.join("user:" + socket.user.id);
+
+  // Is user ke liye koi call intezaar kar rahi thi? (notification dabakar app khola)
+  {
+    const pc = pendingCalls.get(String(socket.user.id));
+    if (pc) {
+      pendingCalls.delete(String(socket.user.id));
+      if (Date.now() - pc.at < 45000) {
+        setTimeout(() => {
+          socket.emit("call:incoming", { from_user: pc.from_user, from_name: pc.from_name, sdp: pc.sdp, video: pc.video });
+          pc.ice.forEach(c => socket.emit("call:ice", { from_user: pc.from_user, to_user: socket.user.id, candidate: c }));
+        }, 800);
+      }
+    }
+  }
 
   // Online ho gaye: apne matches ko batao
   notifyMatches(socket.user.id, "presence", { user_id: socket.user.id, online: true });
@@ -1045,7 +1062,15 @@ io.on("connection", async (socket) => {
       }
       const online = await io.in("user:" + to_user).fetchSockets();
       if (!online.length) {
-        return reply({ error: "Ye abhi online nahi hain, baad mein try karo" });
+        // App band/background: call yaad rakho aur notification bhejo
+        pendingCalls.set(String(to_user), { from_user: socket.user.id, from_name: socket.user.name, sdp, video: !!video, ice: [], at: Date.now() });
+        sendExpoPush(to_user, {
+          title: (socket.user.name || "Someone") + (video ? " video call kar rahe hain 🎥" : " call kar rahe hain 📞"),
+          body: "Tap karke call uthao",
+          data: { type: "call", from_user: socket.user.id },
+          ttl: 40
+        });
+        return reply({ ok: true, pending: true });
       }
       io.to("user:" + to_user).emit("call:incoming", {
         from_user: socket.user.id,
@@ -1065,6 +1090,10 @@ io.on("connection", async (socket) => {
     socket.on(inEvent, async (data = {}) => {
       try {
         if (!(await isMatch(socket.user.id, data.to_user))) return;
+        if (inEvent === "call:ice") {
+          const pc = pendingCalls.get(String(data.to_user));
+          if (pc && String(pc.from_user) === String(socket.user.id)) { pc.ice.push(data.candidate); return; }
+        }
         io.to("user:" + data.to_user).emit(outEvent, { ...data, from_user: socket.user.id });
       } catch (err) {
         console.error(err);
@@ -1078,6 +1107,13 @@ io.on("connection", async (socket) => {
   socket.on("call:end", async (data = {}) => {
     try {
       if (!(await isMatch(socket.user.id, data.to_user))) return;
+      {
+        const pc = pendingCalls.get(String(data.to_user));
+        if (pc && String(pc.from_user) === String(socket.user.id)) {
+          pendingCalls.delete(String(data.to_user));
+          sendExpoPush(data.to_user, { title: "Missed call", body: (socket.user.name || "Someone") + " ne call kiya tha", data: { type: "missed_call" } });
+        }
+      }
       io.to("user:" + data.to_user).emit("call:ended", { ...data, from_user: socket.user.id });
       if (data.role === "caller") {
         const answered = data.answered ? "answered" : "missed";
@@ -1189,7 +1225,7 @@ io.on("connection", async (socket) => {
       // Push notification bhejo (app band ho to bhi aaye)
       sendPush(to_user, {
         title: socket.user.name || "New message",
-        body: text.slice(0, 120),
+        body: (text || "Photo").slice(0, 120),
         url: "/"
       });
       sendExpoPush(to_user, {

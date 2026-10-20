@@ -452,6 +452,24 @@ app.get("/api/users/:id", authCheck, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: "Profile nahi mili" }); }
 });
 
+// SAATHLY_VIDEO_STORY: phone seedha Cloudinary par video bhejta hai, server sirf signature deta hai
+async function ensureStatusVideo() {
+  try { await db.query("ALTER TABLE statuses ADD COLUMN IF NOT EXISTS video_url TEXT"); console.log("Status video column ready"); }
+  catch (err) { console.error("ensureStatusVideo:", err.message); setTimeout(ensureStatusVideo, 5000); }
+}
+setTimeout(ensureStatusVideo, 2500);
+
+app.get("/api/video-sign", authCheck, (req, res) => {
+  if (!photosEnabled) return res.status(503).json({ error: "Video upload is not set up on the server yet" });
+  try {
+    const cfg = cloudinary.config();
+    const timestamp = Math.round(Date.now() / 1000);
+    const folder = "saath/status";
+    const signature = cloudinary.utils.api_sign_request({ folder, timestamp }, cfg.api_secret);
+    res.json({ cloud_name: cfg.cloud_name, api_key: cfg.api_key, timestamp, folder, signature });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Could not prepare video upload" }); }
+});
+
 app.get("/api/push/key", (req, res) => {
   res.json({ key: process.env.VAPID_PUBLIC || "", enabled: pushEnabled });
 });
@@ -635,7 +653,13 @@ app.post("/api/status", authCheck, (req, res) => {
   upload.single("photo")(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message }); b64File(req);
     const text = (req.body.text || "").trim();
-    if (!text && !req.file) return res.status(400).json({ error: "Add some text or a photo" });
+    let videoUrl = null;
+    try {
+      const cn = cloudinary.config().cloud_name;
+      const v = typeof req.body.video_url === "string" ? req.body.video_url : "";
+      if (v && cn && v.startsWith("https://res.cloudinary.com/" + cn + "/video/")) videoUrl = v;
+    } catch (e) {}
+    if (!text && !req.file && !videoUrl) return res.status(400).json({ error: "Add some text or a photo" });
     if (text.length > 300) return res.status(400).json({ error: "Status text is too long" });
     try {
       let photoUrl = null;
@@ -646,8 +670,8 @@ app.post("/api/status", authCheck, (req, res) => {
         photoUrl = up.secure_url;
       }
       const r = await db.query(
-        "INSERT INTO statuses (user_id, text, photo_url) VALUES ($1, $2, $3) RETURNING id, text, photo_url, created_at",
-        [req.user.id, text || null, photoUrl]
+        "INSERT INTO statuses (user_id, text, photo_url, video_url) VALUES ($1, $2, $3, $4) RETURNING id, text, photo_url, video_url, created_at",
+        [req.user.id, text || null, photoUrl, videoUrl]
       );
       res.status(201).json(r.rows[0]);
     } catch (e) {
@@ -661,7 +685,7 @@ app.post("/api/status", authCheck, (req, res) => {
 app.get("/api/status", authCheck, async (req, res) => {
   try {
     const r = await db.query(
-      `SELECT s.id, s.user_id, s.text, s.photo_url, s.created_at,
+      `SELECT s.id, s.user_id, s.text, s.photo_url, s.video_url, s.created_at,
               u.name, u.photo_url AS user_photo,
               (s.user_id = $1) AS mine,
               CASE WHEN s.user_id = $1

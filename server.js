@@ -161,6 +161,24 @@ app.use(express.static("public"));
 
 // /download ko download.html par bhejo (saaf link ke liye)
 const path = require("path");
+// SAATHLY_GET_APP: invite link -> app installed ho to khulo, warna naya APK download
+const APP_APK_URL = process.env.APP_APK_URL || "https://github.com/ankitjha483/saath/releases/latest/download/saathly.apk";
+app.get("/get-app", (req, res) => {
+  const apk = APP_APK_URL;
+  const intent = "intent://open#Intent;scheme=saathlyapp;package=com.jhaankitt.saathlyapp;S.browser_fallback_url=" + encodeURIComponent(apk) + ";end";
+  res.set("Content-Type", "text/html; charset=utf-8");
+  res.send('<!doctype html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<title>Saathly app</title><style>body{margin:0;font-family:system-ui,sans-serif;background:#C23A64;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center}' +
+    '.c{max-width:380px;padding:28px;text-align:center}h1{font-size:40px;margin:0 0 6px}p{opacity:.9;line-height:1.5}' +
+    'a.b{display:block;margin:14px 0;padding:15px;border-radius:14px;font-weight:700;text-decoration:none;font-size:17px}' +
+    '.w{background:#fff;color:#C23A64}.o{border:2px solid #fff;color:#fff}ol{text-align:left;opacity:.9;line-height:1.6;padding-left:20px}</style></head><body><div class="c">' +
+    '<h1>saathly<span style="color:#F5A02A">.</span></h1><p>Milo. Baat karo. Judo. 💗</p>' +
+    '<a class="b w" id="open" href="' + intent + '">📱 Saathly app kholo</a>' +
+    '<a class="b o" href="' + apk + '">⬇️ App download karo (APK)</a>' +
+    '<ol><li>Download hone ke baad file par tap karo</li><li>Puchhe to "Install unknown apps" ko Allow karo</li><li>Install dabao, aur Saathly kholo</li></ol>' +
+    '</div><script>if(/android/i.test(navigator.userAgent)){setTimeout(function(){location.href=document.getElementById("open").href},400)}</script></body></html>');
+});
+
 app.get("/download", (req, res) => res.sendFile(path.join(__dirname, "public", "download.html")));
 app.get("/terms", (req, res) => res.sendFile(path.join(__dirname, "public", "terms.html")));
 

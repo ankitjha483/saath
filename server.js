@@ -126,6 +126,22 @@ async function sendPush(userId, payload) {
 }
 
 // ---------- EXPO PUSH (native app notifications) ----------
+// SAATHLY_CALL_DATA_PUSH: bina title ka "data" notification, taaki app khud call screen dikhaye
+async function sendExpoData(userId, data, ttl) {
+  try {
+    const subs = await db.query("SELECT expo_token FROM push_subs WHERE user_id = $1 AND expo_token IS NOT NULL", [userId]);
+    const messages = subs.rows
+      .filter(s => s.expo_token && String(s.expo_token).startsWith("ExponentPushToken"))
+      .map(s => ({ to: s.expo_token, priority: "high", ttl: ttl || 40, data }));
+    if (!messages.length) return;
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(messages),
+    });
+  } catch (err) { console.error("sendExpoData:", err); }
+}
+
 async function sendExpoPush(userId, payload) {
   try {
     const subs = await db.query("SELECT expo_token FROM push_subs WHERE user_id = $1 AND expo_token IS NOT NULL", [userId]);
@@ -386,6 +402,19 @@ app.post("/api/push-token", authCheck, async (req, res) => {
     );
     res.json({ ok: true });
   } catch (err) { console.error(err); res.status(500).json({ error: "Could not save token" }); }
+});
+
+// Notification ke "Decline" button se call kaatna (app band ho tab bhi)
+app.post("/api/call/decline", authCheck, async (req, res) => {
+  try {
+    const from = req.body.from_user;
+    if (!from || !(await isMatch(req.user.id, from))) return res.status(400).json({ error: "Invalid call" });
+    const pc = pendingCalls.get(String(req.user.id));
+    if (pc && String(pc.from_user) === String(from)) pendingCalls.delete(String(req.user.id));
+    io.to("user:" + from).emit("call:declined", { from_user: req.user.id, to_user: from });
+    await logCall(from, req.user.id, "declined", 0);
+    res.json({ ok: true });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Could not decline" }); }
 });
 
 app.get("/api/push/key", (req, res) => {
@@ -750,6 +779,16 @@ app.get("/api/matches", authCheck, async (req, res) => {
               (SELECT MAX(created_at) FROM messages m
                WHERE (m.from_user = $1 AND m.to_user = u.id) OR (m.from_user = u.id AND m.to_user = $1)
               ) AS last_msg_at,
+              -- SAATHLY_LAST_MSG: aakhri message ka text (photo ho to "📷 Photo") aur kisne bheja
+              (SELECT COALESCE(NULLIF(m3.text, ''), CASE WHEN m3.image_url IS NOT NULL THEN '📷 Photo' END)
+               FROM messages m3
+               WHERE (m3.from_user = $1 AND m3.to_user = u.id) OR (m3.from_user = u.id AND m3.to_user = $1)
+               ORDER BY m3.created_at DESC LIMIT 1
+              ) AS last_msg,
+              (SELECT m4.from_user FROM messages m4
+               WHERE (m4.from_user = $1 AND m4.to_user = u.id) OR (m4.from_user = u.id AND m4.to_user = $1)
+               ORDER BY m4.created_at DESC LIMIT 1
+              ) AS last_msg_from,
               (SELECT COUNT(*) FROM messages m2
                WHERE m2.from_user = u.id AND m2.to_user = $1 AND m2.read_at IS NULL
               ) AS unread_count
@@ -1064,12 +1103,7 @@ io.on("connection", async (socket) => {
       if (!online.length) {
         // App band/background: call yaad rakho aur notification bhejo
         pendingCalls.set(String(to_user), { from_user: socket.user.id, from_name: socket.user.name, sdp, video: !!video, ice: [], at: Date.now() });
-        sendExpoPush(to_user, {
-          title: (socket.user.name || "Someone") + (video ? " video call kar rahe hain 🎥" : " call kar rahe hain 📞"),
-          body: "Tap karke call uthao",
-          data: { type: "call", from_user: socket.user.id },
-          ttl: 40
-        });
+        sendExpoData(to_user, { type: "call", from_user: socket.user.id, from_name: socket.user.name || "Saathly", video: !!video }, 40);
         return reply({ ok: true, pending: true });
       }
       io.to("user:" + to_user).emit("call:incoming", {

@@ -417,6 +417,41 @@ app.post("/api/call/decline", authCheck, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: "Could not decline" }); }
 });
 
+// SAATHLY_PROFILE_FIELDS: naye profile columns (pehle se hon to kuch nahi hota)
+const PROFILE_OPTIONS = {
+  gender: ["Male", "Female", "Non-binary", "Prefer not to say"],
+  interested_in: ["Men", "Women", "Everyone"],
+  occupation: ["Job", "Business", "Student", "Freelancer", "Homemaker", "Looking for work"],
+  education: ["School", "Graduate", "Post-graduate", "PhD", "Other"],
+};
+async function ensureProfileColumns() {
+  try {
+    await db.query(`ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS occupation TEXT,
+      ADD COLUMN IF NOT EXISTS education TEXT,
+      ADD COLUMN IF NOT EXISTS interested_in TEXT,
+      ADD COLUMN IF NOT EXISTS interests TEXT,
+      ADD COLUMN IF NOT EXISTS bio TEXT`);
+    console.log("Profile columns ready");
+  } catch (err) { console.error("ensureProfileColumns:", err.message); setTimeout(ensureProfileColumns, 5000); }
+}
+setTimeout(ensureProfileColumns, 2000);
+
+// Kisi match ki profile dekhna (email kabhi nahi dikhta)
+app.get("/api/users/:id", authCheck, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return res.status(400).json({ error: "Galat user" });
+  try {
+    if (id !== req.user.id && !(await isMatch(req.user.id, id))) return res.status(403).json({ error: "Sirf apne match ki profile dekh sakte ho" });
+    const r = await db.query(
+      "SELECT id, name, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url, last_seen, occupation, education, interested_in, interests, bio FROM users WHERE id = $1",
+      [id]
+    );
+    if (!r.rows[0]) return res.status(404).json({ error: "Ye user exist nahi karta" });
+    res.json(r.rows[0]);
+  } catch (err) { console.error(err); res.status(500).json({ error: "Profile nahi mili" }); }
+});
+
 app.get("/api/push/key", (req, res) => {
   res.json({ key: process.env.VAPID_PUBLIC || "", enabled: pushEnabled });
 });
@@ -463,7 +498,7 @@ app.post("/api/push/test", authCheck, async (req, res) => {
 app.get("/api/me", authCheck, async (req, res) => {
   try {
     const r = await db.query(
-      "SELECT id, name, email, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url FROM users WHERE id = $1",
+      "SELECT id, name, email, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url, occupation, education, interested_in, interests, bio FROM users WHERE id = $1",
       [req.user.id]
     );
     res.json(r.rows[0] || {});
@@ -479,11 +514,26 @@ app.put("/api/me", authCheck, async (req, res) => {
   if (name !== undefined && (!name.trim() || name.trim().length > 50)) {
     return res.status(400).json({ error: "Name must be 1 to 50 characters" });
   }
-  const allowedIntents = ["Long-term relationship", "Marriage", "Figuring it out"];
+  const allowedIntents = ["Long-term relationship", "Marriage", "Friendship", "Figuring it out"];
   if (intent !== undefined && intent && !allowedIntents.includes(intent)) {
     return res.status(400).json({ error: "Please choose a valid option for what you're looking for" });
   }
   try {
+    // naye profile fields (dropdown wale sirf list me se)
+    {
+      const b = req.body;
+      for (const k of ["gender", "interested_in", "occupation", "education"]) {
+        if (b[k] !== undefined && b[k] !== "" && b[k] !== null && !PROFILE_OPTIONS[k].includes(b[k])) {
+          return res.status(400).json({ error: "Galat option: " + k });
+        }
+      }
+      const clip = (v, n) => (v === undefined || v === null ? null : String(v).trim().slice(0, n));
+      await db.query(
+        `UPDATE users SET gender = COALESCE($1, gender), interested_in = COALESCE($2, interested_in), occupation = COALESCE($3, occupation),
+           education = COALESCE($4, education), interests = COALESCE($5, interests), bio = COALESCE($6, bio) WHERE id = $7`,
+        [clip(b.gender, 30), clip(b.interested_in, 30), clip(b.occupation, 40), clip(b.education, 40), clip(b.interests, 200), clip(b.bio, 300), req.user.id]
+      );
+    }
     const r = await db.query(
       `UPDATE users SET
          name = COALESCE($1, name),
@@ -683,7 +733,7 @@ app.get("/api/status/:id/viewers", authCheck, async (req, res) => {
 app.get("/api/profiles", authCheck, async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, name, age, city, job, languages, intent, prompt_question, prompt_answer, photo_url
+      `SELECT id, name, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url, occupation, education, interested_in, interests, bio
        FROM users
        WHERE id <> $1
          AND id NOT IN (SELECT to_user FROM swipes WHERE from_user = $1)

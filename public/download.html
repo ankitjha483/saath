@@ -1,62 +1,305 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="hi">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Download Saathly</title>
-<meta name="theme-color" content="#0F5E57">
-<link rel="icon" href="/icon-192.png">
+<title>Saathly app download karo · Milo. Baat karo. Judo.</title>
+<meta name="description" content="Saathly Android app: match karo, chat karo, voice aur video call karo, story lagao. Hindi, Hinglish aur English me. Free download.">
+<meta name="theme-color" content="#C23A64">
+<meta property="og:title" content="Saathly: Milo. Baat karo. Judo.">
+<meta property="og:description" content="Chat, voice aur video call, stories aur groups. Ek hi app me. Abhi Android app download karo.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Hind:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Hind:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Hind",system-ui,sans-serif;background:linear-gradient(160deg,#0F5E57,#0B3D38);color:#fff;min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
-.card{max-width:420px;width:100%;text-align:center}
-.logo{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:2.6rem;letter-spacing:-.02em}
-.logo span{color:#F4845F}
-.appicon{width:110px;height:110px;border-radius:26px;margin:24px auto 16px;display:block;box-shadow:0 20px 40px -16px rgba(0,0,0,.5)}
-h1{font-family:"Bricolage Grotesque",sans-serif;font-size:1.6rem;margin-bottom:8px}
-.sub{opacity:.85;margin-bottom:28px;line-height:1.5}
-.features{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:28px}
-.feat{background:rgba(255,255,255,.12);border-radius:999px;padding:6px 14px;font-size:.9rem}
-.btn{display:block;width:100%;padding:15px;border-radius:14px;border:0;font-weight:700;font-size:1.05rem;margin-bottom:12px;cursor:pointer;text-decoration:none}
-.btn-primary{background:#F4845F;color:#0B2B28}
-.btn-ghost{background:rgba(255,255,255,.15);color:#fff}
-.note{font-size:.82rem;opacity:.75;line-height:1.5;margin-top:16px}
-.steps{text-align:left;background:rgba(255,255,255,.1);border-radius:16px;padding:16px 18px;margin-top:20px;font-size:.9rem;line-height:1.7}
-.steps b{display:block;margin-bottom:6px}
-.disclaimer{font-size:.75rem;opacity:.6;margin-top:24px;line-height:1.5}
+  :root{--rasp:#C23A64;--rasp-d:#9E2B50;--ink:#2B0F1A;--muted:#6E4A5A;--blush:#FFF5F8;--soft:#FCE8EE;--marigold:#F5A02A;--line:#F3D3DE;--white:#fff}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--blush);color:var(--ink);font:400 17px/1.65 "Hind",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:"Baloo 2","Hind",system-ui,sans-serif;line-height:1.08;margin:0;letter-spacing:-.01em}
+  a{color:inherit}
+  a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--marigold);outline-offset:3px;border-radius:12px}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+
+  /* toran: genda phool ki maala, sabse upar */
+  .toran{height:26px;background:
+    radial-gradient(circle at 13px 6px,var(--marigold) 9px,transparent 10px) 0 0/26px 26px repeat-x,
+    radial-gradient(circle at 13px 17px,#E8871B 5px,transparent 6px) 0 0/26px 26px repeat-x;
+    filter:drop-shadow(0 2px 0 rgba(158,43,80,.15))}
+
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+  .brand b{font:800 28px/1 "Baloo 2",sans-serif;color:var(--rasp)}
+  .brand b i{color:var(--marigold);font-style:normal}
+  .nav-web{font-weight:600;color:var(--rasp);text-decoration:none;padding:8px 14px;border-radius:999px;border:2px solid var(--line)}
+  .nav-web:hover{border-color:var(--rasp)}
+
+  /* HERO */
+  .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:26px 0 70px}
+  .hero h1{font-size:clamp(46px,7vw,86px);font-weight:800;color:var(--ink)}
+  .hero h1 span{display:block;color:var(--rasp)}
+  .hero p.lead{font-size:20px;color:var(--muted);max-width:30em;margin:18px 0 28px}
+  .cta{display:flex;flex-wrap:wrap;gap:12px}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:16px 26px;border-radius:18px;font:700 18px/1 "Hind",sans-serif;text-decoration:none;transition:transform .15s ease,background .15s ease}
+  .btn:active{transform:translateY(1px)}
+  .btn-main{background:var(--rasp);color:#fff;box-shadow:0 10px 0 -2px var(--rasp-d)}
+  .btn-main:hover{background:var(--rasp-d)}
+  .btn-ghost{background:#fff;color:var(--rasp);border:2px solid var(--line)}
+  .btn-ghost:hover{border-color:var(--rasp)}
+  .btn small{display:block;font:500 13px/1.2 "Hind",sans-serif;opacity:.85;margin-top:3px}
+  .note{margin-top:16px;font-size:15px;color:var(--muted)}
+
+  /* phone mockup */
+  .phone-wrap{position:relative;display:flex;justify-content:center}
+  .halo{position:absolute;width:88%;aspect-ratio:1;border-radius:50%;background:var(--soft);top:6%;z-index:0}
+  .phone{position:relative;z-index:1;width:300px;border-radius:44px;background:var(--ink);padding:12px;box-shadow:0 30px 60px -20px rgba(43,15,26,.45);transform:rotate(-3deg)}
+  .screen{border-radius:34px;overflow:hidden;background:var(--blush);height:560px;display:flex;flex-direction:column}
+  .p-top{background:#fff;padding:14px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+  .av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;font:700 17px "Baloo 2",sans-serif;position:relative;flex:none}
+  .av.on::after{content:"";position:absolute;right:-1px;bottom:0;width:11px;height:11px;border-radius:50%;background:#2BB673;border:2px solid #fff}
+  .p-name{font:700 16px/1.1 "Baloo 2",sans-serif}
+  .p-sub{font-size:12px;color:var(--rasp)}
+  .p-icons{margin-left:auto;display:flex;gap:6px}
+  .p-icons span{width:30px;height:30px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-size:14px}
+  .stories{display:flex;gap:10px;padding:10px 12px;background:#fff;border-bottom:1px solid var(--line)}
+  .st{width:44px;height:44px;border-radius:50%;padding:2px;border:2.5px solid var(--marigold)}
+  .st div{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;color:#fff;font:700 15px "Baloo 2",sans-serif}
+  .msgs{flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:8px;font-size:14px}
+  .b{max-width:78%;padding:8px 12px;border-radius:16px;line-height:1.35}
+  .b.them{background:#fff;border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:5px}
+  .b.me{background:var(--rasp);color:#fff;align-self:flex-end;border-bottom-right-radius:5px}
+  .b .t{display:block;font-size:10px;opacity:.75;text-align:right;margin-top:2px}
+  .b .t em{font-style:normal;color:#7FE3FF;font-weight:700}
+  .typing{align-self:flex-start;background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 12px;display:flex;gap:4px}
+  .typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);opacity:.5}
+  .p-bar{background:#fff;border-top:1px solid var(--line);padding:10px;display:flex;gap:8px;align-items:center}
+  .p-bar .in{flex:1;background:var(--blush);border:1px solid var(--line);border-radius:20px;padding:8px 12px;font-size:13px;color:#B98C9C}
+  .p-bar .send{background:var(--rasp);color:#fff;border-radius:20px;padding:8px 14px;font-size:13px;font-weight:600}
+  .call-pop{position:absolute;z-index:2;right:-8px;bottom:70px;background:#3A1426;color:#fff;border-radius:22px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 18px 30px -12px rgba(43,15,26,.6);transform:rotate(4deg)}
+  .call-pop b{font:700 15px/1.1 "Baloo 2",sans-serif;display:block}
+  .call-pop small{opacity:.8;font-size:12px}
+  .call-pop .ok{width:34px;height:34px;border-radius:50%;background:#2BB673;display:grid;place-items:center}
+  .call-pop .no{width:34px;height:34px;border-radius:50%;background:#E5484D;display:grid;place-items:center}
+
+  /* FEATURES */
+  section{padding:70px 0}
+  .sec-h{max-width:640px;margin-bottom:34px}
+  .sec-h h2{font-size:clamp(34px,4.6vw,52px);font-weight:800}
+  .sec-h p{color:var(--muted);font-size:19px;margin:10px 0 0}
+  .feat{display:grid;grid-template-columns:repeat(2,1fr);gap:0 56px}
+  .f{display:grid;grid-template-columns:56px 1fr;gap:16px;padding:22px 0;border-top:2px dashed var(--line)}
+  .f .ic{width:56px;height:56px;border-radius:18px;background:#fff;border:2px solid var(--line);display:grid;place-items:center;font-size:26px}
+  .f h3{font-size:24px;font-weight:700;margin-bottom:4px}
+  .f p{margin:0;color:var(--muted)}
+
+  /* BIG BAND */
+  .band{background:var(--rasp);color:#fff;border-radius:36px;padding:56px 40px;display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center}
+  .band h2{font-size:clamp(34px,4.4vw,54px);font-weight:800}
+  .band p{opacity:.92;font-size:19px;margin:12px 0 0}
+  .chips{display:flex;flex-wrap:wrap;gap:10px}
+  .chip{background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.35);border-radius:999px;padding:9px 16px;font-weight:600}
+  .chip.hot{background:#fff;color:var(--rasp);border-color:#fff}
+
+  /* SAFETY */
+  .safe{display:grid;grid-template-columns:.9fr 1.1fr;gap:40px;align-items:start}
+  .safe ul{list-style:none;margin:0;padding:0}
+  .safe li{padding:16px 0 16px 46px;position:relative;border-bottom:2px dashed var(--line);color:var(--muted)}
+  .safe li b{color:var(--ink);display:block;font-size:19px}
+  .safe li::before{content:"✓";position:absolute;left:0;top:16px;width:30px;height:30px;border-radius:50%;background:var(--rasp);color:#fff;display:grid;place-items:center;font-weight:700}
+
+  /* STEPS (sach me ek sequence hai, isliye numbers) */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;counter-reset:s}
+  .step{background:#fff;border-radius:26px;padding:26px;border:2px solid var(--line);position:relative}
+  .step::before{counter-increment:s;content:counter(s);font:800 54px/1 "Baloo 2",sans-serif;color:var(--marigold);display:block;margin-bottom:8px}
+  .step h3{font-size:22px;margin-bottom:6px}
+  .step p{margin:0;color:var(--muted)}
+
+  /* FAQ */
+  details{background:#fff;border:2px solid var(--line);border-radius:20px;padding:4px 22px;margin-bottom:12px}
+  summary{cursor:pointer;font:700 20px/1.3 "Baloo 2",sans-serif;padding:16px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--rasp);font-size:26px;line-height:1}
+  details[open] summary::after{content:"–"}
+  details p{margin:0 0 18px;color:var(--muted)}
+
+  /* FINAL CTA */
+  .final{text-align:center;padding:80px 0 60px}
+  .final h2{font-size:clamp(40px,6vw,72px);font-weight:800}
+  .final h2 span{color:var(--rasp)}
+  .final p{color:var(--muted);font-size:19px;margin:12px auto 28px;max-width:32em}
+  .final .cta{justify-content:center}
+  footer{border-top:2px dashed var(--line);padding:26px 0 40px;color:var(--muted);font-size:15px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+  footer a{color:var(--rasp);font-weight:600;text-decoration:none;margin-left:16px}
+
+  @media (prefers-reduced-motion:no-preference){
+    .phone{animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+    .call-pop{animation:pop .6s .8s cubic-bezier(.2,.8,.2,1.4) both}
+    .typing i{animation:blink 1.2s infinite}
+    .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+    @keyframes rise{from{opacity:0;transform:translateY(40px) rotate(-3deg)}to{opacity:1;transform:translateY(0) rotate(-3deg)}}
+    @keyframes pop{from{opacity:0;transform:scale(.6) rotate(4deg)}to{opacity:1;transform:scale(1) rotate(4deg)}}
+    @keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+  }
+  @media (max-width:880px){
+    .hero,.band,.safe{grid-template-columns:1fr}
+    .hero{padding-top:10px;gap:50px}
+    .feat{grid-template-columns:1fr}
+    .steps{grid-template-columns:1fr}
+    .band{padding:40px 24px;border-radius:28px}
+    .call-pop{right:0}
+  }
+  @media (max-width:420px){ .phone{width:270px} .screen{height:510px} .btn{width:100%;justify-content:center} }
 </style>
 </head>
 <body>
-<div class="card">
-  <div class="logo">saathly<span>.</span></div>
-  <img src="/icon-512.png" alt="Saathly" class="appicon">
-  <h1>Meet. Talk. Connect.</h1>
-  <p class="sub">Chat, voice calls, status and groups — all in one app.</p>
+<div class="toran" aria-hidden="true"></div>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/" aria-label="Saathly home">
+      <svg width="40" height="40" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="230" fill="#C23A64"/><defs><clipPath id="h"><path d="M512 830 C 170 610, 150 300, 350 255 C 440 236, 498 290, 512 345 C 526 290, 584 236, 674 255 C 874 300, 854 610, 512 830 Z"/></clipPath></defs><g clip-path="url(#h)"><rect width="1024" height="1024" fill="#fff"/><path d="M0 0 L512 0 L512 330 C 380 450, 650 640, 512 850 L512 1024 L0 1024 Z" fill="#F5A02A"/></g><path d="M512 330 C 380 450, 650 640, 512 850" fill="none" stroke="#C23A64" stroke-width="30" stroke-linecap="round"/></svg>
+      <b>saathly<i>.</i></b>
+    </a>
+    <a class="nav-web" href="/">Web app kholo</a>
+  </header>
 
-  <div class="features">
-    <span class="feat">💬 Live chat</span>
-    <span class="feat">📞 Voice calls</span>
-    <span class="feat">✨ Status</span>
-    <span class="feat">👥 Groups</span>
+  <!-- HERO -->
+  <div class="hero">
+    <div>
+      <h1>Milo. Baat karo.<span>Saath chalo.</span></h1>
+      <p class="lead">Saathly ab aapke phone me. Naye logon se milo, dil khol ke chat karo, ek tap me voice ya video call karo, aur apne pal story me share karo. Hindi, Hinglish ya English, jaise aap baat karte ho.</p>
+      <div class="cta">
+        <a class="btn btn-main" href="/get-app">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M17.6 9.48l1.84-3.18a.38.38 0 10-.66-.38l-1.86 3.22a11.5 11.5 0 00-9.84 0L5.22 5.92a.38.38 0 10-.66.38L6.4 9.48A10.8 10.8 0 001 18h22a10.8 10.8 0 00-5.4-8.52zM7 15.25a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5zm10 0a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5z"/></svg>
+          <span>Android app download karo<small>Free · seedha install</small></span>
+        </a>
+        <a class="btn btn-ghost" href="/">Browser me kholo</a>
+      </div>
+      <p class="note">iPhone par ho? Saathly web app Safari me poori tarah chalta hai.</p>
+    </div>
+
+    <div class="phone-wrap" aria-hidden="true">
+      <div class="halo"></div>
+      <div class="phone">
+        <div class="screen">
+          <div class="p-top">
+            <div class="av on" style="background:#F5A02A">M</div>
+            <div><div class="p-name">Manish</div><div class="p-sub">typing...</div></div>
+            <div class="p-icons"><span>🎥</span><span>📞</span></div>
+          </div>
+          <div class="stories">
+            <div class="st" style="border-color:#C23A64"><div style="background:#C23A64">A</div></div>
+            <div class="st"><div style="background:#F5A02A">R</div></div>
+            <div class="st"><div style="background:#7A5363">S</div></div>
+            <div class="st"><div style="background:#C23A64">P</div></div>
+          </div>
+          <div class="msgs">
+            <div class="b them">Hii! Tumhari profile me likha hai chai lover ☕<span class="t">10:41</span></div>
+            <div class="b me">Haan bilkul, adrak wali 😄 Aur tum?<span class="t">10:42 <em>✓✓</em></span></div>
+            <div class="b them">Same! Weekend pe ek tapri try karein?<span class="t">10:43</span></div>
+            <div class="b me">Pakka! Pehle ek video call? 🎥<span class="t">10:44 <em>✓✓</em></span></div>
+            <div class="typing"><i></i><i></i><i></i></div>
+          </div>
+          <div class="p-bar"><span>📎</span><div class="in">Message likho</div><div class="send">Bhejo</div></div>
+        </div>
+      </div>
+      <div class="call-pop">
+        <div class="av" style="background:#F5A02A;width:40px;height:40px">M</div>
+        <div><b>Manish</b><small>Video call aa rahi hai</small></div>
+        <div class="no">✕</div><div class="ok">📞</div>
+      </div>
+    </div>
   </div>
+</div>
 
-  <a class="btn btn-primary" href="/Saathly.apk" download>⬇️ Download for Android (APK)</a>
-  <a class="btn btn-ghost" href="/">Open in browser instead</a>
-
-  <div class="steps">
-    <b>How to install the APK:</b>
-    1. Tap "Download for Android"<br>
-    2. Open the downloaded file<br>
-    3. If asked, allow "Install from this source"<br>
-    4. Tap "Install" (ignore the Play Protect warning — it's safe)<br>
-    5. Open Saathly from your home screen 🎉
+<!-- FEATURES -->
+<section>
+  <div class="wrap">
+    <div class="sec-h">
+      <h2>Ek app. Baat karne ke saare tareeke.</h2>
+      <p>Dosti ho, pyaar ho ya bas achhi baatein, sab kuch yahin, bina doosre app par jaaye.</p>
+    </div>
+    <div class="feat">
+      <div class="f"><div class="ic">💗</div><div><h3>Discover aur match</h3><p>Naye log dekho, pasand aaye to like karo. Dono taraf se like ho, tabhi baat shuru hoti hai.</p></div></div>
+      <div class="f"><div class="ic">💬</div><div><h3>Asli chat ka maza</h3><p>Blue ticks, typing..., online ya last seen, photo bhejo, galti se bheja message delete karo.</p></div></div>
+      <div class="f"><div class="ic">📞</div><div><h3>Voice aur video call</h3><p>Ek tap me call. Poori screen par call, ringtone ke saath, chahe app band hi kyun na ho.</p></div></div>
+      <div class="f"><div class="ic">📖</div><div><h3>24 ghante wali story</h3><p>Photo ya apni baat story me daalo, aur dekho kisne kab dekhi.</p></div></div>
+      <div class="f"><div class="ic">👥</div><div><h3>Groups</h3><p>Apne matches ke saath group banao. Weekend ka plan ab ek jagah.</p></div></div>
+      <div class="f"><div class="ic">🔔</div><div><h3>Koi message na chhoote</h3><p>App band ho tab bhi naye message aur call ki turant notification.</p></div></div>
+      <div class="f"><div class="ic">🗂️</div><div><h3>Call history</h3><p>Kisne call kiya, kisko kiya, kitni der baat hui. Missed call laal rang me.</p></div></div>
+      <div class="f"><div class="ic">⚡</div><div><h3>Khud update hota hai</h3><p>Naye features apne aap aate hain. Har baar dobara download karne ki zaroorat nahi.</p></div></div>
+    </div>
   </div>
+</section>
 
-  <p class="note">On iPhone? Tap "Open in browser", then Share → Add to Home Screen.</p>
+<!-- BAND: bhasha + theme -->
+<div class="wrap">
+  <div class="band">
+    <div>
+      <h2>Aapki bhasha. Aapka rang.</h2>
+      <p>Poora app Hindi, Hinglish ya English me chalao. Aur mood ke hisaab se Light, Dark ya Grey theme chuno.</p>
+    </div>
+    <div class="chips">
+      <span class="chip hot">हिंदी</span><span class="chip">Hinglish</span><span class="chip">English</span>
+      <span class="chip">☀️ Light</span><span class="chip">🌙 Dark</span><span class="chip">🩶 Grey</span>
+    </div>
+  </div>
+</div>
 
-  <p class="disclaimer">Saathly is a personal learning project, not a commercial service. Please use a test email and don't share sensitive personal information.</p>
+<!-- SAFETY -->
+<section>
+  <div class="wrap safe">
+    <div class="sec-h">
+      <h2>Aapki suraksha pehle.</h2>
+      <p>Achhi baatein tabhi hoti hain jab aap befikr ho.</p>
+    </div>
+    <ul>
+      <li><b>Sirf match hi baat kar sakte hain</b>Jab tak dono taraf se like na ho, koi aapko message ya call nahi kar sakta.</li>
+      <li><b>Ek tap me Block aur Report</b>Koi pareshan kare to turant rok do. Wo aapko phir kabhi nahi dikhega.</li>
+      <li><b>Aapka email chhupa rehta hai</b>Aapka email kisi ko nahi dikhta, aur password surakshit tareeke se save hota hai.</li>
+      <li><b>Aapka data, aapka faisla</b>Account delete karte hi aapka saara data hamesha ke liye hat jaata hai.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- STEPS -->
+<section style="padding-top:20px">
+  <div class="wrap">
+    <div class="sec-h"><h2>Bas 3 kadam, aur aap Saathly par.</h2></div>
+    <div class="steps">
+      <div class="step"><h3>Download karo</h3><p>Upar wala "Android app download karo" button dabao. App ki file aapke phone me aa jayegi.</p></div>
+      <div class="step"><h3>Install ki ijazat do</h3><p>Phone poochhe to "Install unknown apps" ko Allow karo. Ye sirf ek baar karna hota hai.</p></div>
+      <div class="step"><h3>Kholo aur judo</h3><p>Install dabao, Saathly kholo, email se account banao. Aur shuru!</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section style="padding-top:20px">
+  <div class="wrap" style="max-width:820px">
+    <div class="sec-h"><h2>Aapke sawal</h2></div>
+    <details><summary>Kya Saathly free hai?</summary><p>Haan. Download karna, match karna, chat aur call karna, sab free hai.</p></details>
+    <details><summary>App Play Store par kyun nahi hai?</summary><p>Abhi Saathly seedha hamari website se milta hai. Isliye install karte waqt phone ek baar "unknown apps" ki ijazat maangta hai. Ye normal hai.</p></details>
+    <details><summary>iPhone par chalega?</summary><p>Android app abhi sirf Android ke liye hai. iPhone par Saathly web app Safari me kholo, wahan bhi chat, call aur story sab chalta hai.</p></details>
+    <details><summary>Web app ka account app me chalega?</summary><p>Haan, bilkul. Same email aur password se login karo. Aapki chats, matches aur photos sab wahi milenge.</p></details>
+    <details><summary>Call ke liye internet kitna chahiye?</summary><p>Voice call normal mobile data par chal jaati hai. Video call ke liye WiFi ya achha 4G/5G behtar rehta hai.</p></details>
+  </div>
+</section>
+
+<!-- FINAL -->
+<div class="wrap final">
+  <h2>Kisi ka saath, bas ek tap door.</h2>
+  <p>Abhi Saathly download karo, aur aaj hi pehli baat shuru karo.</p>
+  <div class="cta">
+    <a class="btn btn-main" href="/get-app">Android app download karo</a>
+    <a class="btn btn-ghost" href="/">Web app kholo</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <footer>
+    <span>© Saathly · Milo. Baat karo. Judo.</span>
+    <span><a href="/terms">Privacy &amp; Terms</a><a href="/">Web app</a></span>
+  </footer>
 </div>
 </body>
 </html>

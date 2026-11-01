@@ -556,6 +556,27 @@ app.post("/api/location", authCheck, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: "Could not save location" }); }
 });
 
+// SAATHLY_TURN: call ke liye ICE servers. Cloudflare TURN key sirf server par rehti hai;
+// app/web ko sirf kuch ghante chalne wale credentials milte hain. Key na ho to sirf STUN.
+const FALLBACK_ICE = [{ urls: ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"] }];
+app.get("/api/ice", authCheck, async (req, res) => {
+  const kid = process.env.CLOUDFLARE_TURN_KEY_ID, tok = process.env.CLOUDFLARE_TURN_KEY_TOKEN;
+  if (!kid || !tok) return res.json({ iceServers: FALLBACK_ICE, turn: false });
+  try {
+    const r = await fetch("https://rtc.live.cloudflare.com/v1/turn/keys/" + kid + "/credentials/generate", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + tok, "Content-Type": "application/json" },
+      body: JSON.stringify({ ttl: 4 * 3600 }),
+    });
+    const d = await r.json();
+    let list = Array.isArray(d.iceServers) ? d.iceServers : d.iceServers ? [d.iceServers] : [];
+    // port 53 browsers block karte hain, use hata do
+    list = list.map(s => ({ ...s, urls: (Array.isArray(s.urls) ? s.urls : [s.urls]).filter(u => !/:53(\?|$)/.test(u)) })).filter(s => s.urls.length);
+    if (!r.ok || !list.length) throw new Error("bad turn response " + r.status);
+    res.json({ iceServers: list, turn: true });
+  } catch (err) { console.error("TURN:", err.message); res.json({ iceServers: FALLBACK_ICE, turn: false }); }
+});
+
 app.get("/api/push/key", (req, res) => {
   res.json({ key: process.env.VAPID_PUBLIC || "", enabled: pushEnabled });
 });

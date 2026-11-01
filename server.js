@@ -494,6 +494,46 @@ app.get("/api/video-sign", authCheck, (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: "Could not prepare video upload" }); }
 });
 
+// SAATHLY_DISTANCE: shahar ke beech ke point se andaazan doori. Kisi ki asli location kabhi nahi li jaati.
+const CITY_COORDS = {
+  "Agra":[27.18,78.01],"Ahmedabad":[23.02,72.57],"Ajmer":[26.45,74.64],"Aligarh":[27.88,78.08],"Amritsar":[31.63,74.87],
+  "Asansol":[23.68,86.98],"Aurangabad":[19.88,75.34],"Bareilly":[28.37,79.43],"Belagavi":[15.85,74.50],"Bengaluru":[12.97,77.59],
+  "Bhagalpur":[25.25,86.99],"Bhopal":[23.26,77.41],"Bhubaneswar":[20.30,85.82],"Bikaner":[28.02,73.31],"Chandigarh":[30.73,76.78],
+  "Chennai":[13.08,80.27],"Coimbatore":[11.02,76.96],"Darbhanga":[26.15,85.90],"Dehradun":[30.32,78.03],"Delhi":[28.61,77.21],
+  "Dhanbad":[23.80,86.43],"Durgapur":[23.52,87.31],"Faridabad":[28.41,77.32],"Gaya":[24.79,85.00],"Ghaziabad":[28.67,77.45],
+  "Goa":[15.49,73.83],"Gorakhpur":[26.76,83.37],"Gurugram":[28.46,77.03],"Guwahati":[26.14,91.74],"Gwalior":[26.22,78.18],
+  "Haridwar":[29.95,78.16],"Hisar":[29.15,75.72],"Hubballi":[15.36,75.12],"Hyderabad":[17.39,78.49],"Indore":[22.72,75.86],
+  "Jabalpur":[23.18,79.99],"Jaipur":[26.91,75.79],"Jalandhar":[31.33,75.58],"Jammu":[32.73,74.86],"Jamshedpur":[22.80,86.20],
+  "Jodhpur":[26.24,73.02],"Kanpur":[26.45,80.33],"Karnal":[29.69,76.99],"Kochi":[9.93,76.27],"Kolkata":[22.57,88.36],
+  "Kota":[25.21,75.86],"Lucknow":[26.85,80.95],"Ludhiana":[30.90,75.86],"Madurai":[9.93,78.12],"Mangaluru":[12.91,74.86],
+  "Meerut":[28.98,77.71],"Moradabad":[28.84,78.77],"Mumbai":[19.08,72.88],"Muzaffarpur":[26.12,85.39],"Mysuru":[12.30,76.64],
+  "Nagpur":[21.15,79.09],"Nashik":[20.00,73.79],"Navi Mumbai":[19.03,73.03],"Noida":[28.54,77.39],"Panipat":[29.39,76.97],
+  "Patna":[25.59,85.14],"Prayagraj":[25.44,81.85],"Puducherry":[11.94,79.81],"Pune":[18.52,73.86],"Raipur":[21.25,81.63],
+  "Rajkot":[22.30,70.80],"Ranchi":[23.34,85.31],"Rishikesh":[30.09,78.27],"Rohtak":[28.90,76.61],"Shimla":[31.10,77.17],
+  "Siliguri":[26.73,88.40],"Sohna":[28.25,77.07],"Solapur":[17.66,75.91],"Sonipat":[28.99,77.02],"Srinagar":[34.08,74.80],
+  "Surat":[21.17,72.83],"Thane":[19.22,72.98],"Thiruvananthapuram":[8.52,76.94],"Tiruchirappalli":[10.79,78.70],"Udaipur":[24.59,73.71],
+  "Vadodara":[22.31,73.18],"Varanasi":[25.32,82.97],"Vijayawada":[16.51,80.65],"Visakhapatnam":[17.69,83.22]
+};
+function cityCoords(name) {
+  if (!name) return null;
+  const key = Object.keys(CITY_COORDS).find(k => k.toLowerCase() === String(name).trim().toLowerCase());
+  return key ? CITY_COORDS[key] : null;
+}
+async function ensureDistanceColumns() {
+  try {
+    await db.query(`ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS fav_destination TEXT,
+      ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION,
+      ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION`);
+    // purane users: unke shahar se point bhar do
+    const r = await db.query("SELECT id, city FROM users WHERE lat IS NULL AND city IS NOT NULL AND city <> ''");
+    for (const u of r.rows) { const c = cityCoords(u.city); if (c) await db.query("UPDATE users SET lat=$1, lng=$2 WHERE id=$3", [c[0], c[1], u.id]); }
+    console.log("Distance columns ready");
+  } catch (err) { console.error("ensureDistanceColumns:", err.message); setTimeout(ensureDistanceColumns, 5000); }
+}
+setTimeout(ensureDistanceColumns, 3000);
+app.get("/api/cities", (req, res) => res.json(Object.keys(CITY_COORDS)));
+
 app.get("/api/push/key", (req, res) => {
   res.json({ key: process.env.VAPID_PUBLIC || "", enabled: pushEnabled });
 });
@@ -540,7 +580,7 @@ app.post("/api/push/test", authCheck, async (req, res) => {
 app.get("/api/me", authCheck, async (req, res) => {
   try {
     const r = await db.query(
-      "SELECT id, name, email, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url, occupation, education, interested_in, interests, bio FROM users WHERE id = $1",
+      "SELECT id, name, email, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url, occupation, education, interested_in, interests, bio, fav_destination FROM users WHERE id = $1",
       [req.user.id]
     );
     res.json(r.rows[0] || {});
@@ -575,6 +615,8 @@ app.put("/api/me", authCheck, async (req, res) => {
            education = COALESCE($4, education), interests = COALESCE($5, interests), bio = COALESCE($6, bio) WHERE id = $7`,
         [clip(b.gender, 30), clip(b.interested_in, 30), clip(b.occupation, 40), clip(b.education, 40), clip(b.interests, 200), clip(b.bio, 300), req.user.id]
       );
+      if (b.fav_destination !== undefined) await db.query("UPDATE users SET fav_destination=$1 WHERE id=$2", [clip(b.fav_destination, 60), req.user.id]);
+      if (b.city !== undefined) { const c = cityCoords(b.city); await db.query("UPDATE users SET lat=$1, lng=$2 WHERE id=$3", [c ? c[0] : null, c ? c[1] : null, req.user.id]); }
     }
     const r = await db.query(
       `UPDATE users SET
@@ -791,15 +833,22 @@ app.get("/api/status/:id/viewers", authCheck, async (req, res) => {
 // ---------- PROFILES ----------
 app.get("/api/profiles", authCheck, async (req, res) => {
   try {
+    const meRow = (await db.query("SELECT lat, lng, interested_in FROM users WHERE id = $1", [req.user.id])).rows[0] || {};
+    const wantGender = meRow.interested_in === "Men" ? "Male" : meRow.interested_in === "Women" ? "Female" : null;
     const result = await db.query(
-      `SELECT id, name, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url, occupation, education, interested_in, interests, bio
+      `SELECT id, name, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url, occupation, education, interested_in, interests, bio, fav_destination,
+              CASE WHEN $2::float8 IS NULL OR lat IS NULL THEN NULL
+                   ELSE ROUND((6371 * acos(LEAST(1, GREATEST(-1,
+                        cos(radians($2::float8)) * cos(radians(lat)) * cos(radians(lng) - radians($3::float8)) +
+                        sin(radians($2::float8)) * sin(radians(lat))))))::numeric, 0) END AS distance_km
        FROM users
        WHERE id <> $1
+         AND ($4::text IS NULL OR gender = $4::text OR gender IS NULL)
          AND id NOT IN (SELECT to_user FROM swipes WHERE from_user = $1)
          AND id NOT IN (SELECT blocked FROM blocks WHERE blocker = $1)
          AND id NOT IN (SELECT blocker FROM blocks WHERE blocked = $1)
-       ORDER BY id`,
-      [req.user.id]
+       ORDER BY distance_km ASC NULLS LAST, id`,
+      [req.user.id, meRow.lat == null ? null : meRow.lat, meRow.lng == null ? null : meRow.lng, wantGender]
     );
     res.json(result.rows);
   } catch (err) {

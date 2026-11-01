@@ -534,6 +534,28 @@ async function ensureDistanceColumns() {
 setTimeout(ensureDistanceColumns, 3000);
 app.get("/api/cities", (req, res) => res.json(Object.keys(CITY_COORDS)));
 
+// SAATHLY_GEO: phone ki approximate location, ~1 km grid par gol karke. Exact point kabhi save nahi hota,
+// aur kisi doosre user ko coordinates kabhi nahi bheje jaate (sirf doori).
+async function ensureGeoColumns() {
+  try {
+    await db.query(`ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS loc_source TEXT,
+      ADD COLUMN IF NOT EXISTS loc_updated_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS hide_distance BOOLEAN DEFAULT FALSE`);
+    console.log("Geo columns ready");
+  } catch (err) { console.error("ensureGeoColumns:", err.message); setTimeout(ensureGeoColumns, 5000); }
+}
+setTimeout(ensureGeoColumns, 3500);
+app.post("/api/location", authCheck, async (req, res) => {
+  const lat = Number(req.body.lat), lng = Number(req.body.lng);
+  if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return res.status(400).json({ error: "Invalid location" });
+  const r2 = (x) => Math.round(x * 100) / 100; // ~1.1 km grid
+  try {
+    await db.query("UPDATE users SET lat=$1, lng=$2, loc_source='gps', loc_updated_at=NOW() WHERE id=$3", [r2(lat), r2(lng), req.user.id]);
+    res.json({ ok: true });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Could not save location" }); }
+});
+
 app.get("/api/push/key", (req, res) => {
   res.json({ key: process.env.VAPID_PUBLIC || "", enabled: pushEnabled });
 });
@@ -580,7 +602,7 @@ app.post("/api/push/test", authCheck, async (req, res) => {
 app.get("/api/me", authCheck, async (req, res) => {
   try {
     const r = await db.query(
-      "SELECT id, name, email, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url, occupation, education, interested_in, interests, bio, fav_destination FROM users WHERE id = $1",
+      "SELECT id, name, email, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url, occupation, education, interested_in, interests, bio, fav_destination, hide_distance, loc_source FROM users WHERE id = $1",
       [req.user.id]
     );
     res.json(r.rows[0] || {});
@@ -616,7 +638,8 @@ app.put("/api/me", authCheck, async (req, res) => {
         [clip(b.gender, 30), clip(b.interested_in, 30), clip(b.occupation, 40), clip(b.education, 40), clip(b.interests, 200), clip(b.bio, 300), req.user.id]
       );
       if (b.fav_destination !== undefined) await db.query("UPDATE users SET fav_destination=$1 WHERE id=$2", [clip(b.fav_destination, 60), req.user.id]);
-      if (b.city !== undefined) { const c = cityCoords(b.city); await db.query("UPDATE users SET lat=$1, lng=$2 WHERE id=$3", [c ? c[0] : null, c ? c[1] : null, req.user.id]); }
+      if (b.city !== undefined) { const c = cityCoords(b.city); await db.query("UPDATE users SET lat=$1, lng=$2 WHERE id=$3 AND (loc_source IS NULL OR loc_source <> 'gps')", [c ? c[0] : null, c ? c[1] : null, req.user.id]); }
+      if (b.hide_distance !== undefined) await db.query("UPDATE users SET hide_distance=$1 WHERE id=$2", [!!b.hide_distance, req.user.id]);
     }
     const r = await db.query(
       `UPDATE users SET
@@ -833,11 +856,12 @@ app.get("/api/status/:id/viewers", authCheck, async (req, res) => {
 // ---------- PROFILES ----------
 app.get("/api/profiles", authCheck, async (req, res) => {
   try {
-    const meRow = (await db.query("SELECT lat, lng, interested_in FROM users WHERE id = $1", [req.user.id])).rows[0] || {};
+    const meRow = (await db.query("SELECT lat, lng, interested_in, loc_source FROM users WHERE id = $1", [req.user.id])).rows[0] || {};
     const wantGender = meRow.interested_in === "Men" ? "Male" : meRow.interested_in === "Women" ? "Female" : null;
     const result = await db.query(
       `SELECT id, name, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url, occupation, education, interested_in, interests, bio, fav_destination,
-              CASE WHEN $2::float8 IS NULL OR lat IS NULL THEN NULL
+              (loc_source = 'gps' AND $5::text = 'gps') AS dist_gps,
+              CASE WHEN $2::float8 IS NULL OR lat IS NULL OR hide_distance IS TRUE THEN NULL
                    ELSE ROUND((6371 * acos(LEAST(1, GREATEST(-1,
                         cos(radians($2::float8)) * cos(radians(lat)) * cos(radians(lng) - radians($3::float8)) +
                         sin(radians($2::float8)) * sin(radians(lat))))))::numeric, 0) END AS distance_km
@@ -848,7 +872,7 @@ app.get("/api/profiles", authCheck, async (req, res) => {
          AND id NOT IN (SELECT blocked FROM blocks WHERE blocker = $1)
          AND id NOT IN (SELECT blocker FROM blocks WHERE blocked = $1)
        ORDER BY distance_km ASC NULLS LAST, id`,
-      [req.user.id, meRow.lat == null ? null : meRow.lat, meRow.lng == null ? null : meRow.lng, wantGender]
+      [req.user.id, meRow.lat == null ? null : meRow.lat, meRow.lng == null ? null : meRow.lng, wantGender, meRow.loc_source || null]
     );
     res.json(result.rows);
   } catch (err) {

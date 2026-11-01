@@ -534,6 +534,30 @@ async function ensureDistanceColumns() {
 setTimeout(ensureDistanceColumns, 3000);
 app.get("/api/cities", (req, res) => res.json(Object.keys(CITY_COORDS)));
 
+// SAATHLY_LIKES: jinhone mujhe like kiya, aur maine abhi tak jawab nahi diya
+app.get("/api/likes-me", authCheck, async (req, res) => {
+  try {
+    const me = (await db.query("SELECT lat, lng, loc_source FROM users WHERE id = $1", [req.user.id])).rows[0] || {};
+    const r = await db.query(
+      `SELECT u.id, u.name, u.age, u.gender, u.city, u.photo_url, u.occupation, u.education, u.interests, u.bio, u.fav_destination, u.intent,
+              (u.loc_source = 'gps' AND $4::text = 'gps') AS dist_gps,
+              CASE WHEN $2::float8 IS NULL OR u.lat IS NULL OR u.hide_distance IS TRUE THEN NULL
+                   ELSE ROUND((6371 * acos(LEAST(1, GREATEST(-1,
+                        cos(radians($2::float8)) * cos(radians(u.lat)) * cos(radians(u.lng) - radians($3::float8)) +
+                        sin(radians($2::float8)) * sin(radians(u.lat))))))::numeric, 0) END AS distance_km
+       FROM swipes s
+       JOIN users u ON u.id = s.from_user
+       WHERE s.to_user = $1 AND s.action = 'like'
+         AND NOT EXISTS (SELECT 1 FROM swipes mine WHERE mine.from_user = $1 AND mine.to_user = s.from_user)
+         AND NOT EXISTS (SELECT 1 FROM blocks b WHERE (b.blocker = $1 AND b.blocked = u.id) OR (b.blocker = u.id AND b.blocked = $1))
+       ORDER BY u.id DESC
+       LIMIT 100`,
+      [req.user.id, me.lat == null ? null : me.lat, me.lng == null ? null : me.lng, me.loc_source || null]
+    );
+    res.json(r.rows);
+  } catch (err) { console.error(err); res.status(500).json({ error: "Could not load likes" }); }
+});
+
 // SAATHLY_GEO: phone ki approximate location, ~1 km grid par gol karke. Exact point kabhi save nahi hota,
 // aur kisi doosre user ko coordinates kabhi nahi bheje jaate (sirf doori).
 async function ensureGeoColumns() {
@@ -879,6 +903,9 @@ app.get("/api/profiles", authCheck, async (req, res) => {
   try {
     const meRow = (await db.query("SELECT lat, lng, interested_in, loc_source FROM users WHERE id = $1", [req.user.id])).rows[0] || {};
     const wantGender = meRow.interested_in === "Men" ? "Male" : meRow.interested_in === "Women" ? "Female" : null;
+    const qi = (v) => { const n = parseInt(v, 10); return isFinite(n) && n > 0 ? n : null; };
+    const fMin = qi(req.query.min_age), fMax = qi(req.query.max_age), fKm = qi(req.query.max_km);
+    const fInt = req.query.interest ? String(req.query.interest).slice(0, 30) : null;
     const result = await db.query(
       `SELECT id, name, age, gender, city, job, languages, intent, prompt_question, prompt_answer, photo_url, occupation, education, interested_in, interests, bio, fav_destination,
               (loc_source = 'gps' AND $5::text = 'gps') AS dist_gps,
@@ -889,13 +916,16 @@ app.get("/api/profiles", authCheck, async (req, res) => {
        FROM users
        WHERE id <> $1
          AND ($4::text IS NULL OR gender = $4::text OR gender IS NULL)
+         AND ($6::int IS NULL OR age >= $6::int)
+         AND ($7::int IS NULL OR age <= $7::int)
+         AND ($8::text IS NULL OR interests ILIKE '%' || $8::text || '%')
          AND id NOT IN (SELECT to_user FROM swipes WHERE from_user = $1)
          AND id NOT IN (SELECT blocked FROM blocks WHERE blocker = $1)
          AND id NOT IN (SELECT blocker FROM blocks WHERE blocked = $1)
        ORDER BY distance_km ASC NULLS LAST, id`,
-      [req.user.id, meRow.lat == null ? null : meRow.lat, meRow.lng == null ? null : meRow.lng, wantGender, meRow.loc_source || null]
+      [req.user.id, meRow.lat == null ? null : meRow.lat, meRow.lng == null ? null : meRow.lng, wantGender, meRow.loc_source || null, fMin, fMax, fInt]
     );
-    res.json(result.rows);
+    res.json(fKm ? result.rows.filter(r => r.distance_km !== null && Number(r.distance_km) <= fKm) : result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database se data nahi mila" });

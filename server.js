@@ -601,6 +601,25 @@ app.get("/api/ice", authCheck, async (req, res) => {
   } catch (err) { console.error("TURN:", err.message); res.json({ iceServers: FALLBACK_ICE, turn: false }); }
 });
 
+// SAATHLY_BLOCKLIST: maine kise block kiya + unblock
+app.get("/api/blocks", authCheck, async (req, res) => {
+  try {
+    const r = await db.query(
+      "SELECT u.id, u.name, u.photo_url, u.city FROM blocks b JOIN users u ON u.id = b.blocked WHERE b.blocker = $1 ORDER BY u.name",
+      [req.user.id]
+    );
+    res.json(r.rows);
+  } catch (err) { console.error(err); res.status(500).json({ error: "Could not load blocked people" }); }
+});
+app.post("/api/unblock", authCheck, async (req, res) => {
+  const userId = Number(req.body.user_id);
+  if (!userId) return res.status(400).json({ error: "Galat user" });
+  try {
+    await db.query("DELETE FROM blocks WHERE blocker = $1 AND blocked = $2", [req.user.id, userId]);
+    res.json({ message: "Unblock kar diya" });
+  } catch (err) { console.error(err); res.status(500).json({ error: "Could not unblock" }); }
+});
+
 app.get("/api/push/key", (req, res) => {
   res.json({ key: process.env.VAPID_PUBLIC || "", enabled: pushEnabled });
 });

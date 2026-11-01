@@ -156,6 +156,54 @@
   footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding:30px 0 40px;color:var(--muted);font-size:15px}
   footer a{margin-left:20px;font-weight:700;color:var(--ink)}
 
+
+  /* ---------- DEMO SCREENS ---------- */
+  .demo{padding-bottom:40px}
+  .demo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;align-items:start}
+  .demo-item{margin:0;display:flex;flex-direction:column;align-items:center;text-align:center}
+  .demo-item:nth-child(2){transform:translateY(34px)}
+  .dphone{width:250px;height:510px;border-radius:42px;background:#0E0509;padding:10px;box-shadow:0 30px 60px -28px rgba(46,18,32,.55)}
+  .dscr{width:100%;height:100%;border-radius:33px;overflow:hidden;position:relative}
+  .demo-item figcaption{margin-top:22px;max-width:250px}
+  .demo-item figcaption b{display:block;font:700 21px/1.2 "Bricolage Grotesque",sans-serif}
+  .demo-item figcaption span{display:block;color:var(--muted);font-size:15.5px;margin-top:6px}
+  .dchat{background:#FFF5F8;display:flex;flex-direction:column;color:var(--ink)}
+  .dtop{display:flex;align-items:center;gap:9px;padding:14px 12px 10px;background:#fff;border-bottom:1px solid var(--line)}
+  .dtop .dav{width:36px;height:36px;flex:none}
+  .dtop b{display:block;font:700 14.5px "Bricolage Grotesque",sans-serif}
+  .dtop small{color:#2BB673;font-weight:700;font-size:11.5px}
+  .dicons{margin-left:auto;font-size:13px;letter-spacing:4px}
+  .dmsgs{flex:1;padding:14px 10px;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.35}
+  .dm{max-width:82%;padding:8px 11px;border-radius:15px;text-align:left}
+  .dm.t{background:#fff;border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+  .dm.y{background:var(--rasp2);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+  .dm s{text-decoration:none;display:block;text-align:right;font-size:10px;color:#8EEBFF;font-weight:800}
+  .dtyping{align-self:flex-start;background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 11px;display:flex;gap:4px}
+  .dtyping i{width:6px;height:6px;border-radius:50%;background:var(--muted);opacity:.45}
+  .dbar{display:flex;gap:8px;align-items:center;padding:9px;background:#fff;border-top:1px solid var(--line);font-size:12px}
+  .dbar span{flex:1;background:#FFF5F8;border:1px solid var(--line);border-radius:18px;padding:8px 11px;color:#B98C9C;text-align:left}
+  .dbar b{background:var(--rasp2);color:#fff;border-radius:18px;padding:8px 12px}
+  .dcall{background:linear-gradient(180deg,#5A1F3A,#2A0D1B 62%,#14060C);color:#fff;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:56px 14px 34px}
+  .dcall-top{text-align:center}
+  .dcall-top .dbig{border-radius:50%;box-shadow:0 0 0 10px rgba(245,160,42,.16),0 0 0 22px rgba(245,160,42,.07)}
+  .dcall-top h3{font-size:26px;margin-top:26px}
+  .dcall-top p{margin:6px 0 0;opacity:.75;font-size:14px;letter-spacing:.06em}
+  .dacts{display:flex;gap:22px;justify-content:center}
+  .dacts span{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-size:20px;position:relative}
+  .dacts span em{position:absolute;top:60px;font-style:normal;font-size:11px;color:rgba(255,255,255,.85)}
+  .dacts .g{background:rgba(255,255,255,.16)}.dacts .r{background:#E5484D;color:#fff}
+  .dvideo{background:#FCE3EC}
+  .dvid-main{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .dvid-main{background:#E8E1FA}
+  .dvid-main .dhuge{width:400px;height:400px;transform:translateY(95px)}
+  .dvid-self{position:absolute;top:16px;right:14px;width:74px;height:104px;border-radius:14px;overflow:hidden;background:#DDF1EA;display:grid;place-items:center;border:2px solid #fff}
+  .dvid-name{position:absolute;top:22px;left:16px;background:rgba(30,10,20,.55);color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px}
+  .dvideo .dacts{position:absolute;left:0;right:0;bottom:48px}
+  .dvideo .dacts .g{background:rgba(30,10,20,.45);color:#fff}
+  .dvideo .dacts em{color:var(--ink);font-weight:700}
+  .demo-note{text-align:center;color:var(--muted);font-size:13.5px;margin-top:70px}
+  @media (prefers-reduced-motion:no-preference){.dtyping i{animation:dblink 1.2s infinite}.dtyping i:nth-child(2){animation-delay:.2s}.dtyping i:nth-child(3){animation-delay:.4s}@keyframes dblink{0%,80%,100%{opacity:.3}40%{opacity:1}}}
+  @media (max-width:980px){.demo-grid{grid-template-columns:1fr;gap:56px}.demo-item:nth-child(2){transform:none}}
   @media (prefers-reduced-motion:no-preference){
     .p1{animation:in1 1s cubic-bezier(.2,.8,.2,1) both}
     .p2{animation:in2 1s .12s cubic-bezier(.2,.8,.2,1) both}
@@ -203,7 +251,7 @@
         <svg width="38" height="38" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="230" fill="#C23A64"/><defs><clipPath id="h"><path d="M512 830 C 170 610, 150 300, 350 255 C 440 236, 498 290, 512 345 C 526 290, 584 236, 674 255 C 874 300, 854 610, 512 830 Z"/></clipPath></defs><g clip-path="url(#h)"><rect width="1024" height="1024" fill="#fff"/><path d="M0 0 L512 0 L512 330 C 380 450, 650 640, 512 850 L512 1024 L0 1024 Z" fill="#F5A02A"/></g><path d="M512 330 C 380 450, 650 640, 512 850" fill="none" stroke="#C23A64" stroke-width="30" stroke-linecap="round"/></svg>
         <span>saathly<i>.</i></span>
       </a>
-      <div class="links"><a href="#features">Features</a><a href="#safety">Safety</a><a href="#faq">FAQ</a></div>
+      <div class="links"><a href="#demo">See it</a><a href="#features">Features</a><a href="#safety">Safety</a><a href="#faq">FAQ</a></div>
       <a class="pill" href="/app">Open web app</a>
     </nav>
 
@@ -244,6 +292,49 @@
     </div>
   </div>
 </header>
+
+
+<section id="demo" class="demo">
+  <div class="wrap">
+    <div class="head">
+      <h2>See Saathly in action.</h2>
+      <p>Match, chat, and call, all in one place. Here's what a conversation on Saathly looks like.</p>
+    </div>
+    <div class="demo-grid">
+      <figure class="demo-item">
+        <div class="dphone"><div class="dscr dchat">
+          <div class="dtop"><svg class="dav" width="36" height="36" viewBox="0 0 120 120" role="img" aria-label="Illustrated person"><circle cx="60" cy="60" r="60" fill="#FCE3EC"/><path d="M30 58 Q28 26 60 22 Q92 26 90 58 L92 98 Q60 108 28 98 Z" fill="#2B1A20"/><path d="M22 120 Q24 88 60 86 Q96 88 98 120 Z" fill="#C23A64"/><rect x="52" y="70" width="16" height="18" rx="6" fill="#C98D6B"/><ellipse cx="60" cy="54" rx="22" ry="25" fill="#C98D6B"/><path d="M36 50 Q40 28 60 27 Q80 28 84 50 Q72 38 60 40 Q48 38 36 50 Z" fill="#2B1A20"/><circle cx="51" cy="56" r="2.6" fill="#2B1A20"/><circle cx="69" cy="56" r="2.6" fill="#2B1A20"/><path d="M52 66 Q60 72 68 66" stroke="#2B1A20" stroke-width="2.4" fill="none" stroke-linecap="round"/><ellipse cx="46" cy="63" rx="4" ry="2.4" fill="#E9837F" opacity=".45"/><ellipse cx="74" cy="63" rx="4" ry="2.4" fill="#E9837F" opacity=".45"/></svg><div><b>Aisha</b><small>online</small></div><span class="dicons">🎥 📞</span></div>
+          <div class="dmsgs">
+            <div class="dm t">Hey! Saw you love trekking too 🏔️</div>
+            <div class="dm y">Yes! Just did Triund last month<s>✓✓</s></div>
+            <div class="dm t">No way, it's on my list! Tips?</div>
+            <div class="dm y">Start early, and carry Maggi 😄<s>✓✓</s></div>
+            <div class="dtyping"><i></i><i></i><i></i></div>
+          </div>
+          <div class="dbar"><span>Message</span><b>Send</b></div>
+        </div></div>
+        <figcaption><b>Chat that feels alive</b><span>Read receipts, typing, photos and more.</span></figcaption>
+      </figure>
+      <figure class="demo-item">
+        <div class="dphone"><div class="dscr dcall">
+          <div class="dcall-top"><svg class="dbig" width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="Illustrated person"><circle cx="60" cy="60" r="60" fill="#FFE8C7"/><path d="M22 120 Q24 88 60 86 Q96 88 98 120 Z" fill="#2E1220"/><rect x="52" y="70" width="16" height="18" rx="6" fill="#B57A55"/><ellipse cx="60" cy="54" rx="22" ry="25" fill="#B57A55"/><path d="M37 50 Q38 26 60 25 Q82 26 83 50 Q80 40 72 37 Q60 33 48 37 Q40 40 37 50 Z" fill="#1E1418"/><circle cx="51" cy="56" r="2.6" fill="#2B1A20"/><circle cx="69" cy="56" r="2.6" fill="#2B1A20"/><path d="M52 66 Q60 72 68 66" stroke="#2B1A20" stroke-width="2.4" fill="none" stroke-linecap="round"/><ellipse cx="46" cy="63" rx="4" ry="2.4" fill="#E9837F" opacity=".45"/><ellipse cx="74" cy="63" rx="4" ry="2.4" fill="#E9837F" opacity=".45"/></svg><h3>Rohan</h3><p>04:32</p></div>
+          <div class="dacts"><span class="g">🎙️<em>Mute</em></span><span class="r">✕<em>End</em></span></div>
+        </div></div>
+        <figcaption><b>Voice calls, one tap away</b><span>Clear calls that ring even when the app is closed.</span></figcaption>
+      </figure>
+      <figure class="demo-item">
+        <div class="dphone"><div class="dscr dvideo">
+          <div class="dvid-main"><svg class="dhuge" width="230" height="230" viewBox="0 0 120 120" role="img" aria-label="Illustrated person"><circle cx="60" cy="60" r="60" fill="#E8E1FA"/><circle cx="60" cy="18" r="11" fill="#4A2A1E"/><path d="M22 120 Q24 88 60 86 Q96 88 98 120 Z" fill="#F5A02A"/><rect x="52" y="70" width="16" height="18" rx="6" fill="#E2B08E"/><ellipse cx="60" cy="54" rx="22" ry="25" fill="#E2B08E"/><path d="M37 50 Q40 29 60 28 Q80 29 83 50 Q74 38 60 39 Q46 38 37 50 Z" fill="#4A2A1E"/><circle cx="51" cy="56" r="2.6" fill="#2B1A20"/><circle cx="69" cy="56" r="2.6" fill="#2B1A20"/><path d="M52 66 Q60 72 68 66" stroke="#2B1A20" stroke-width="2.4" fill="none" stroke-linecap="round"/><ellipse cx="46" cy="63" rx="4" ry="2.4" fill="#E9837F" opacity=".45"/><ellipse cx="74" cy="63" rx="4" ry="2.4" fill="#E9837F" opacity=".45"/></svg></div>
+          <div class="dvid-self"><svg class="" width="74" height="74" viewBox="0 0 120 120" role="img" aria-label="Illustrated person"><circle cx="60" cy="60" r="60" fill="#DDF1EA"/><path d="M22 120 Q24 88 60 86 Q96 88 98 120 Z" fill="#E0457A"/><rect x="52" y="70" width="16" height="18" rx="6" fill="#8E5B3E"/><ellipse cx="60" cy="54" rx="22" ry="25" fill="#8E5B3E"/><circle cx="42" cy="38" r="8" fill="#121012"/><circle cx="52" cy="30" r="8" fill="#121012"/><circle cx="64" cy="28" r="8" fill="#121012"/><circle cx="76" cy="33" r="8" fill="#121012"/><circle cx="82" cy="44" r="8" fill="#121012"/><circle cx="38" cy="48" r="8" fill="#121012"/><circle cx="51" cy="56" r="2.6" fill="#2B1A20"/><circle cx="69" cy="56" r="2.6" fill="#2B1A20"/><path d="M52 66 Q60 72 68 66" stroke="#2B1A20" stroke-width="2.4" fill="none" stroke-linecap="round"/><ellipse cx="46" cy="63" rx="4" ry="2.4" fill="#E9837F" opacity=".45"/><ellipse cx="74" cy="63" rx="4" ry="2.4" fill="#E9837F" opacity=".45"/></svg></div>
+          <div class="dvid-name">Meera · 12:08</div>
+          <div class="dacts"><span class="g">🔄<em>Flip</em></span><span class="r">✕<em>End</em></span><span class="g">🎙️<em>Mute</em></span></div>
+        </div></div>
+        <figcaption><b>Face to face, full screen</b><span>Video calls that make it feel real.</span></figcaption>
+      </figure>
+    </div>
+    <p class="demo-note">Illustrations shown for preview. Every profile on Saathly is a real person.</p>
+  </div>
+</section>
 
 <section id="features">
   <div class="wrap">
